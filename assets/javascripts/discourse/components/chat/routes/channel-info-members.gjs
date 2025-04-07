@@ -175,7 +175,6 @@ export default class ChatRouteChannelInfoMembers extends Component {
     return this.showAddMembers ? "" : "active";
   }
 
-// {{this.addMembersMode}}
   <template>
     <div class="c-routes --channel-info-members">
       {{#if this.site.mobileView}}
@@ -209,9 +208,7 @@ export default class ChatRouteChannelInfoMembers extends Component {
         </a></li>
         </ul>
       </div>
-      {{!-- <input type="checkbox" checked={{this.showAddMembers}} {{on "change" this.toggleShowAddMembers}} /> --}}
       {{#if this.showAddMembers}}
-      
         <MessageCreator
           @mode={{this.addMembersMode}}
           @channel={{@channel}}
