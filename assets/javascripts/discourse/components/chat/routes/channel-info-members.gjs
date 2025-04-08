@@ -249,14 +249,12 @@ export default class ChatRouteChannelInfoMembers extends Component {
             {{#each this.members as |membership|}}
               <li
                 class="c-channel-members__list-item -member"
-                {{on "click" (fn this.openMemberCard membership.user)}}
-                {{this.onEnter (fn this.openMemberCard membership.user)}}
                 tabindex="0"
               >
                 <ChatUserInfo
                   @user={{membership.user}}
                   @avatarSize="tiny"
-                  @interactive={{false}}
+                  @interactive={{true}}
                   @showStatus={{true}}
                   @showStatusDescription={{true}}
                 />
@@ -264,7 +262,6 @@ export default class ChatRouteChannelInfoMembers extends Component {
                   <button class="btn btn-danger -remove-member" 
                     {{on "click" (fn this.removeMember membership.user.username_lower)}}>
                     {{icon "trash-can"}}
-                    {{!-- {{i18n "chat.members_view.remove_member"}} --}}
                   </button>
                 {{/if}}
               </li>
