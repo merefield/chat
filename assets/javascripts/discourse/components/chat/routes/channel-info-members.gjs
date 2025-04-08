@@ -149,9 +149,10 @@ export default class ChatRouteChannelInfoMembers extends Component {
 
   @action
   removeMember(username) {
-    debugger;
     this.dialog.confirm({
-      message: i18n("chat.members_view.remove_member"),
+      message: i18n("chat.members_view.remove_member", {
+        username: username,
+      }),
       didConfirm: async () => {
         await ajax(`/chat/api/channels/${this.args.channel.id}/memberships/${username}`,
           {
@@ -161,11 +162,18 @@ export default class ChatRouteChannelInfoMembers extends Component {
           popupAjaxError(error);
         });
         await this.load();
+        this.toasts.success({
+          data: {
+            message: i18n("chat.members_view.remove_member_success", {
+              username: username,
+            }),
+          },
+          duration: 2000,
+        });
         this.invalidateMembers();
       }
     });
   }
-
 
   get addMembersClass() {
     return this.showAddMembers ? "active" : "";
