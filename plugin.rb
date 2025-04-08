@@ -3,8 +3,8 @@
 # name: chat
 # about: Adds chat functionality to your site so it can natively support both long-form and short-form communication needs of your online community.
 # meta_topic_id: 230881
-# version: 0.4
-# authors: Kane York, Mark VanLandingham, Martin Brennan, Joffrey Jaffeux
+# version: 0.4.1f
+# authors: Kane York, Mark VanLandingham, Martin Brennan, Joffrey Jaffeux, fork work by Robert Barrow
 # url: https://github.com/discourse/discourse/tree/main/plugins/chat
 # meta_topic_id: 230881
 
