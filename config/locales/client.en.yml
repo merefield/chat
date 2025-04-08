@@ -331,6 +331,8 @@ en:
         yesterday: Yesterday
 
       members_view:
+        remove_member: "Are you sure you want to remove %{username} from this channel?"
+        remove_member_success: "%{username} has been removed from this channel"
         filter_placeholder: Find members
         add_member: Add Member
         back_to_settings: "Back to settings"
