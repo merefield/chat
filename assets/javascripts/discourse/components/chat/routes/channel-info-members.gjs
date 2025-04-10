@@ -140,7 +140,11 @@ export default class ChatRouteChannelInfoMembers extends Component {
 
   @action
   showCurrentMembersToggle(event) {
-    this.showAddMembers = !this.showAddMembers;
+    if (this.currentUser?.staff) {
+      this.showAddMembers = !this.showAddMembers;
+    } else {
+      this.showAddMembers = false;
+    }
   }
 
   invalidateMembers() {
@@ -206,14 +210,16 @@ export default class ChatRouteChannelInfoMembers extends Component {
         </button>
         </a>
         </li>
-        <li><a>
-        <button
-          class={{concatClass "btn btn-transparent" this.addMembersClass}}
-          {{on "click" this.showCurrentMembersToggle}}
-          >
-          {{icon "plus"}}
-        </button> 
-        </a></li>
+        {{#if this.currentUser.staff}}
+          <li><a>
+          <button
+            class={{concatClass "btn btn-transparent" this.addMembersClass}}
+            {{on "click" this.showCurrentMembersToggle}}
+            >
+            {{icon "plus"}}
+          </button>
+          </a></li>
+        {{/if}}
         </ul>
       </div>
       {{#if this.showAddMembers}}
