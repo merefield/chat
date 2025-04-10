@@ -1,5 +1,8 @@
 import Component from "@glimmer/component";
 import { cached, tracked } from "@glimmer/tracking";
+import concatClass from "discourse/helpers/concat-class";
+import { ajax } from "discourse/lib/ajax";
+import { popupAjaxError } from "discourse/lib/ajax-error";
 import { fn, hash } from "@ember/helper";
 import { on } from "@ember/modifier";
 import { action } from "@ember/object";
@@ -24,9 +27,13 @@ export default class ChatRouteChannelInfoMembers extends Component {
   @service modal;
   @service loadingSlider;
   @service site;
+  @service currentUser;
+  @service dialog;
+  @service toasts;
 
   @tracked filter = "";
   @tracked showAddMembers = false;
+  @tracked _cacheBuster = 0;
 
   addMemberLabel = i18n("chat.members_view.add_member");
   filterPlaceholder = i18n("chat.members_view.filter_placeholder");
@@ -78,6 +85,7 @@ export default class ChatRouteChannelInfoMembers extends Component {
 
   @cached
   get members() {
+    this._cacheBuster;
     const params = {};
     if (this.filter?.length) {
       params.username = this.filter;
@@ -103,7 +111,9 @@ export default class ChatRouteChannelInfoMembers extends Component {
   }
 
   @action
-  hideAddMember() {
+  async hideAddMember() {
+    await this.load();
+    this.invalidateMembers();
     this.showAddMembers = false;
   }
 
@@ -123,6 +133,56 @@ export default class ChatRouteChannelInfoMembers extends Component {
     return MODES.add_members;
   }
 
+  @action
+  toggleShowAddMembers(event) {
+    this.showAddMembers = event.target.checked;
+  }
+
+  @action
+  showCurrentMembersToggle(event) {
+    this.showAddMembers = !this.showAddMembers;
+  }
+
+  invalidateMembers() {
+    this._cacheBuster++;
+  }
+
+  @action
+  removeMember(username) {
+    this.dialog.confirm({
+      message: i18n("chat.members_view.remove_member", {
+        username: username,
+      }),
+      didConfirm: async () => {
+        await ajax(`/chat/api/channels/${this.args.channel.id}/memberships/${username}`,
+          {
+            type: "DELETE",
+          }
+        ).catch((error) => {
+          popupAjaxError(error);
+        });
+        await this.load();
+        this.toasts.success({
+          data: {
+            message: i18n("chat.members_view.remove_member_success", {
+              username: username,
+            }),
+          },
+          duration: 2000,
+        });
+        this.invalidateMembers();
+      }
+    });
+  }
+
+  get addMembersClass() {
+    return this.showAddMembers ? "active" : "";
+  }
+
+  get showMembersClass() {
+    return this.showAddMembers ? "" : "active";
+  }
+
   <template>
     <div class="c-routes --channel-info-members">
       {{#if this.site.mobileView}}
@@ -135,6 +195,27 @@ export default class ChatRouteChannelInfoMembers extends Component {
           {{i18n "chat.members_view.back_to_settings"}}
         </LinkTo>
       {{/if}}
+      <div class="view-nav">
+        <ul class="nav nav-pills">
+        <li><a>
+        <button
+          class={{concatClass "btn btn-transparent" this.showMembersClass}}
+          {{on "click" this.showCurrentMembersToggle}}
+          >
+          {{icon "people-group"}}
+        </button>
+        </a>
+        </li>
+        <li><a>
+        <button
+          class={{concatClass "btn btn-transparent" this.addMembersClass}}
+          {{on "click" this.showCurrentMembersToggle}}
+          >
+          {{icon "plus"}}
+        </button> 
+        </a></li>
+        </ul>
+      </div>
       {{#if this.showAddMembers}}
         <MessageCreator
           @mode={{this.addMembersMode}}
@@ -168,17 +249,21 @@ export default class ChatRouteChannelInfoMembers extends Component {
             {{#each this.members as |membership|}}
               <li
                 class="c-channel-members__list-item -member"
-                {{on "click" (fn this.openMemberCard membership.user)}}
-                {{this.onEnter (fn this.openMemberCard membership.user)}}
                 tabindex="0"
               >
                 <ChatUserInfo
                   @user={{membership.user}}
                   @avatarSize="tiny"
-                  @interactive={{false}}
+                  @interactive={{true}}
                   @showStatus={{true}}
                   @showStatusDescription={{true}}
                 />
+                {{#if this.currentUser.staff}}
+                  <button class="btn btn-danger -remove-member" 
+                    {{on "click" (fn this.removeMember membership.user.username_lower)}}>
+                    {{icon "trash-can"}}
+                  </button>
+                {{/if}}
               </li>
             {{else}}
               {{#if this.noResults}}
