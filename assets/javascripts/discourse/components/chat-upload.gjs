@@ -57,8 +57,7 @@ export default class ChatUpload extends Component {
 
   get videoSourceUrl() {
     const baseUrl = this.args.upload.url;
-    debugger;
-    return this.capabilities.isSafari ? `${baseUrl}#t=0.001` : baseUrl;
+    return this.capabilities.isSafari ? `${baseUrl}#t=2` : baseUrl;
   }
 
   @action
