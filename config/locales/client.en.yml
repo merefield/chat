@@ -476,6 +476,7 @@ en:
       notification_levels:
         never: "Never"
         mention: "Only for mentions"
+        explicit_mention: "Only for mentions, not inc. @here or @all"
         always: "For all activity"
 
       settings:
