@@ -1,3 +1,5 @@
+import { tracked } from "@glimmer/tracking";
+import Service from "@ember/service";
 import { render, triggerEvent } from "@ember/test-helpers";
 import hbs from "htmlbars-inline-precompile";
 import { module, test } from "qunit";
@@ -135,5 +137,60 @@ module("Discourse Chat | Component | chat-upload", function (hooks) {
     assert
       .dom("a.chat-other-upload")
       .hasAttribute("href", TXT_FIXTURE.url, "has the correct URL");
+  });
+
+  module("video source URL", function (nestedHooks) {
+    let mockCapabilities;
+
+    class MockCapabilitiesService extends Service {
+      @tracked isIOS = false;
+      @tracked isSafari = false;
+    }
+
+    nestedHooks.beforeEach(function () {
+      // Register and inject the mock service
+      this.owner.register("service:capabilities", MockCapabilitiesService);
+      mockCapabilities = this.owner.lookup("service:capabilities");
+    });
+
+    test("adds timestamp parameter for iOS", async function (assert) {
+      const self = this;
+      this.set("upload", {
+        ...VIDEO_FIXTURE,
+        url: "https://example.com/video.mp4",
+      });
+      mockCapabilities.isIOS = true;
+      mockCapabilities.isSafari = true;
+
+      await render(<template><ChatUpload @upload={{self.upload}} /></template>);
+
+      assert
+        .dom("video.chat-video-upload source")
+        .hasAttribute(
+          "src",
+          "https://example.com/video.mp4#t=0.001",
+          "adds timestamp for iOS"
+        );
+    });
+
+    test("does not add timestamp parameter for other browsers", async function (assert) {
+      const self = this;
+      this.set("upload", {
+        ...VIDEO_FIXTURE,
+        url: "https://example.com/video.mp4",
+      });
+      mockCapabilities.isIOS = false;
+      mockCapabilities.isSafari = false;
+
+      await render(<template><ChatUpload @upload={{self.upload}} /></template>);
+
+      assert
+        .dom("video.chat-video-upload source")
+        .hasAttribute(
+          "src",
+          "https://example.com/video.mp4",
+          "does not add timestamp for other browsers"
+        );
+    });
   });
 });
