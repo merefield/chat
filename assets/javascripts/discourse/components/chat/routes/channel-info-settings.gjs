@@ -24,6 +24,7 @@ import ToggleChannelMembershipButton from "discourse/plugins/chat/discourse/comp
 const NOTIFICATION_LEVELS = [
   { name: i18n("chat.notification_levels.never"), value: "never" },
   { name: i18n("chat.notification_levels.mention"), value: "mention" },
+  { name: i18n("chat.notification_levels.explicit_mention"), value: "explicit_mention" },
   { name: i18n("chat.notification_levels.always"), value: "always" },
 ];
 
