@@ -475,8 +475,8 @@ en:
 
       notification_levels:
         never: "Never"
-        mention: "Only for mentions"
-        explicit_mention: "Only for mentions, not inc. @here or @all"
+        mention: "My Mentions + @all Broadcasts"
+        explicit_mention: "Only For My Mentions (@%{username})"
         always: "For all activity"
 
       settings:

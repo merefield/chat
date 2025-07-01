@@ -21,12 +21,7 @@ import ChatModalToggleChannelStatus from "discourse/plugins/chat/discourse/compo
 import ChatRetentionReminderText from "discourse/plugins/chat/discourse/components/chat-retention-reminder-text";
 import ToggleChannelMembershipButton from "discourse/plugins/chat/discourse/components/toggle-channel-membership-button";
 
-const NOTIFICATION_LEVELS = [
-  { name: i18n("chat.notification_levels.never"), value: "never" },
-  { name: i18n("chat.notification_levels.mention"), value: "mention" },
-  { name: i18n("chat.notification_levels.explicit_mention"), value: "explicit_mention" },
-  { name: i18n("chat.notification_levels.always"), value: "always" },
-];
+// FORK EDIT
 
 export default class ChatRouteChannelInfoSettings extends Component {
   @service chatApi;
@@ -40,7 +35,14 @@ export default class ChatRouteChannelInfoSettings extends Component {
   @service toasts;
   @service router;
 
-  notificationLevels = NOTIFICATION_LEVELS;
+  // FORK EDITS
+  notificationLevels = [
+    { name: i18n("chat.notification_levels.never"), value: "never" },
+    { name: i18n("chat.notification_levels.mention"), value: "mention" },
+    { name: i18n("chat.notification_levels.explicit_mention", { username: this.currentUser.username }), value: "explicit_mention" },
+    { name: i18n("chat.notification_levels.always"), value: "always" },
+  ];
+  // END FORK EDITS
 
   settingsSectionTitle = i18n("chat.settings.settings_title");
   channelInfoSectionTitle = i18n("chat.settings.info_title");
