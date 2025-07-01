@@ -38,7 +38,7 @@ export default class ChatRouteChannelInfoSettings extends Component {
   // FORK EDITS
   notificationLevels = [
     { name: i18n("chat.notification_levels.never"), value: "never" },
-    { name: i18n("chat.notification_levels.mention"), value: "mention" },
+    { name: i18n("chat.notification_levels.mention", { username: this.currentUser.username }), value: "mention" },
     { name: i18n("chat.notification_levels.explicit_mention", { username: this.currentUser.username }), value: "explicit_mention" },
     { name: i18n("chat.notification_levels.always"), value: "always" },
   ];
