@@ -162,7 +162,9 @@ module("Discourse Chat | Component | chat-upload", function (hooks) {
       mockCapabilities.isIOS = true;
       mockCapabilities.isSafari = true;
 
-      await render(<template><ChatUpload @upload={{self.upload}} /></template>);
+      // FORK EDITS
+      await render(hbs`<template><ChatUpload @upload={{self.upload}} /></template>`);
+      // END FORK EDITS
 
       assert
         .dom("video.chat-video-upload source")
@@ -182,7 +184,9 @@ module("Discourse Chat | Component | chat-upload", function (hooks) {
       mockCapabilities.isIOS = false;
       mockCapabilities.isSafari = false;
 
-      await render(<template><ChatUpload @upload={{self.upload}} /></template>);
+      // FORK EDITS
+      await render(hbs`<template><ChatUpload @upload={{self.upload}} /></template>`);
+      // END FORK EDITS
 
       assert
         .dom("video.chat-video-upload source")
