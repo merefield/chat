@@ -71,10 +71,10 @@ export default class NewGroup extends Component {
               placeholder={{this.placeholder}}
               @value={{this.newGroupTitle}}
             />
-
+            {{!-- // FORK EDIT  --}}
             <MembersCount
               @count={{this.membersCount}}
-              @max={{this.siteSettings.chat_max_direct_message_users}}
+              @max={{this.maxMembers}}
             />
           </div>
         </div>
