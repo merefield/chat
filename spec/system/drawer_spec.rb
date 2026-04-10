@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-RSpec.describe "Drawer", type: :system do
-  fab!(:current_user) { Fabricate(:user) }
+RSpec.describe "Drawer" do
+  fab!(:current_user, :user)
   let(:chat_page) { PageObjects::Pages::Chat.new }
   let(:channel_page) { PageObjects::Pages::ChatChannel.new }
   let(:drawer_page) { PageObjects::Pages::ChatDrawer.new }
@@ -12,8 +12,40 @@ RSpec.describe "Drawer", type: :system do
     chat_page.prefers_drawer
   end
 
+  it "handles transitions between drawer and full page and applies appropriate classes" do
+    visit("/")
+
+    chat_page.open_from_header
+    expect(page).to have_css(
+      "body.has-drawer-chat.has-chat.chat-drawer-active.chat-drawer-expanded",
+    )
+    expect(page).to have_css("html.has-drawer-chat.has-chat")
+    expect(page).to have_no_css("body.has-full-page-chat")
+
+    drawer_page.maximize
+    expect(page).to have_css("body.has-chat.has-full-page-chat")
+    expect(page).to have_css("html.has-chat.has-full-page-chat")
+    expect(page).to have_no_css("body.has-drawer-chat")
+    expect(page).to have_no_css("html.has-drawer-chat")
+  end
+
+  it "respects drawer preference after page refresh" do
+    visit("/")
+    chat_page.open_from_header
+    expect(page).to have_css("body.has-drawer-chat")
+
+    drawer_page.close
+    expect(page).to have_no_css("body.chat-drawer-active")
+
+    refresh
+
+    chat_page.open_from_header
+    expect(page).to have_css("body.has-drawer-chat")
+    expect(page).to have_no_css("body.has-full-page-chat")
+  end
+
   context "when on channel" do
-    fab!(:channel) { Fabricate(:chat_channel) }
+    fab!(:channel, :chat_channel)
     fab!(:membership) do
       Fabricate(:user_chat_channel_membership, user: current_user, chat_channel: channel)
     end
@@ -60,8 +92,9 @@ RSpec.describe "Drawer", type: :system do
 
       chat_page.open_from_header
 
-      expect(page.find(".chat-drawer").native.style("width")).to eq("500px")
-      expect(page.find(".chat-drawer").native.style("height")).to eq("500px")
+      chat_drawer = page.find(".chat-drawer")
+      expect(chat_drawer).to have_computed_style(width: "500px")
+      expect(chat_drawer).to have_computed_style(height: "500px")
     end
 
     it "has a default size" do
@@ -69,8 +102,9 @@ RSpec.describe "Drawer", type: :system do
 
       chat_page.open_from_header
 
-      expect(page.find(".chat-drawer").native.style("width")).to eq("400px")
-      expect(page.find(".chat-drawer").native.style("height")).to eq("530px")
+      chat_drawer = page.find(".chat-drawer")
+      expect(chat_drawer).to have_computed_style(width: "400px")
+      expect(chat_drawer).to have_computed_style(height: "530px")
     end
   end
 
@@ -89,7 +123,7 @@ RSpec.describe "Drawer", type: :system do
   end
 
   context "when closing the drawer" do
-    fab!(:channel_1) { Fabricate(:chat_channel) }
+    fab!(:channel_1, :chat_channel)
     fab!(:message_1) { Fabricate(:chat_message, chat_channel: channel_1) }
 
     before { channel_1.add(current_user) }
@@ -124,9 +158,9 @@ RSpec.describe "Drawer", type: :system do
   end
 
   context "when going from drawer to full page" do
-    fab!(:channel_1) { Fabricate(:chat_channel) }
-    fab!(:channel_2) { Fabricate(:chat_channel) }
-    fab!(:user_1) { Fabricate(:user) }
+    fab!(:channel_1, :chat_channel)
+    fab!(:channel_2, :chat_channel)
+    fab!(:user_1, :user)
 
     before do
       current_user.upsert_custom_fields(::Chat::LAST_CHAT_CHANNEL_ID => channel_1.id)
@@ -161,7 +195,7 @@ RSpec.describe "Drawer", type: :system do
   end
 
   context "when subfolder install" do
-    fab!(:channel) { Fabricate(:chat_channel) }
+    fab!(:channel, :chat_channel)
 
     before do
       current_user.upsert_custom_fields(::Chat::LAST_CHAT_CHANNEL_ID => channel.id)
@@ -180,7 +214,7 @@ RSpec.describe "Drawer", type: :system do
   context "when sending a message from topic" do
     fab!(:topic)
     fab!(:posts) { Fabricate.times(5, :post, topic: topic) }
-    fab!(:channel) { Fabricate(:chat_channel) }
+    fab!(:channel, :chat_channel)
     fab!(:membership) do
       Fabricate(:user_chat_channel_membership, user: current_user, chat_channel: channel)
     end
@@ -242,7 +276,7 @@ RSpec.describe "Drawer", type: :system do
       chat_page.open_from_header
 
       expect(page).to have_css(".chat-drawer .c-footer")
-      expect(page).to have_css(".chat-drawer .c-footer__item", count: 2)
+      expect(page).to have_css(".chat-drawer .c-footer__item", count: 3)
     end
 
     it "hides footer nav when only channels are accessible" do
@@ -256,10 +290,12 @@ RSpec.describe "Drawer", type: :system do
 
     context "when clicking footer nav items" do
       fab!(:channel) { Fabricate(:chat_channel, threading_enabled: true) }
+      fab!(:other_user, :user)
 
       before do
         SiteSetting.chat_threads_enabled = true
         channel.add(current_user)
+        channel.add(other_user)
       end
 
       it "shows active state" do
@@ -270,18 +306,28 @@ RSpec.describe "Drawer", type: :system do
         expect(page).to have_css("#c-footer-direct-messages.--active")
       end
 
-      it "redirects to correct route" do
-        visit("/")
-        chat_page.open_from_header
+      context "with viewable threads" do
+        before do
+          message = Fabricate(:chat_message, chat_channel: channel, user: current_user)
+          thread = Fabricate(:chat_thread, channel: channel, original_message: message)
+          thread.add(current_user)
+          Fabricate(:chat_message, chat_channel: channel, thread: thread, user: other_user)
+          thread.set_replies_count_cache(1, update_db: true)
+        end
 
-        drawer_page.click_direct_messages
-        expect(drawer_page).to have_open_direct_messages
+        it "redirects to correct route" do
+          visit("/")
+          chat_page.open_from_header
 
-        drawer_page.click_channels
-        expect(drawer_page).to have_open_channels
+          drawer_page.click_direct_messages
+          expect(drawer_page).to have_open_direct_messages
 
-        drawer_page.click_user_threads
-        expect(drawer_page).to have_open_user_threads
+          drawer_page.click_channels
+          expect(drawer_page).to have_open_channels
+
+          drawer_page.click_user_threads
+          expect(drawer_page).to have_open_user_threads
+        end
       end
     end
   end

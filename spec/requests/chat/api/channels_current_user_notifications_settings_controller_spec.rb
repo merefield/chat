@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 RSpec.describe Chat::Api::ChannelsCurrentUserNotificationsSettingsController do
-  fab!(:current_user) { Fabricate(:user) }
+  fab!(:current_user, :user)
 
   before do
     SiteSetting.chat_enabled = true
     SiteSetting.chat_allowed_groups = Group::AUTO_GROUPS[:everyone]
+    SiteSetting.chat_pinned_messages = true
   end
 
   describe "#update" do
@@ -15,7 +16,7 @@ RSpec.describe Chat::Api::ChannelsCurrentUserNotificationsSettingsController do
                      { notifications_settings: { muted: true } }
 
     context "when category channel has invalid params" do
-      fab!(:channel_1) { Fabricate(:category_channel) }
+      fab!(:channel_1, :category_channel)
 
       before do
         channel_1.add(current_user)
@@ -42,7 +43,7 @@ RSpec.describe Chat::Api::ChannelsCurrentUserNotificationsSettingsController do
     end
 
     context "when category channel has valid params" do
-      fab!(:channel_1) { Fabricate(:category_channel) }
+      fab!(:channel_1, :category_channel)
 
       before do
         channel_1.add(current_user)
@@ -71,7 +72,7 @@ RSpec.describe Chat::Api::ChannelsCurrentUserNotificationsSettingsController do
     end
 
     context "when membership doesn’t exist" do
-      fab!(:channel_1) { Fabricate(:category_channel) }
+      fab!(:channel_1, :category_channel)
 
       before { sign_in(current_user) }
 

@@ -2,7 +2,7 @@
 
 describe ChatSDK::Channel do
   describe ".messages" do
-    fab!(:channel_1) { Fabricate(:chat_channel) }
+    fab!(:channel_1, :chat_channel)
     fab!(:message_1) { Fabricate(:chat_message, chat_channel: channel_1) }
     fab!(:message_2) { Fabricate(:chat_message, chat_channel: channel_1) }
 
@@ -21,7 +21,7 @@ describe ChatSDK::Channel do
     end
 
     context "when guardian can't see the channel" do
-      fab!(:channel_1) { Fabricate(:private_category_channel) }
+      fab!(:channel_1, :private_category_channel)
 
       it "fails" do
         params[:guardian] = Fabricate(:user).guardian
@@ -30,10 +30,18 @@ describe ChatSDK::Channel do
       end
     end
 
-    context "when target_message doesn’t exist" do
+    context "when target_message doesn't exist" do
       it "fails" do
         expect { described_class.messages(**params, target_message_id: -999) }.to raise_error(
           "Target message doesn't exist",
+        )
+      end
+    end
+
+    context "when direction is invalid" do
+      it "fails" do
+        expect { described_class.messages(**params, direction: "invalid") }.to raise_error(
+          "Direction is not included in the list",
         )
       end
     end

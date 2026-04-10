@@ -2,9 +2,9 @@
 
 RSpec.describe Chat::DirectMessagesController do
   fab!(:user)
-  fab!(:user1) { Fabricate(:user) }
-  fab!(:user2) { Fabricate(:user) }
-  fab!(:user3) { Fabricate(:user) }
+  fab!(:user1, :user)
+  fab!(:user2, :user)
+  fab!(:user3, :user)
 
   before do
     SiteSetting.chat_enabled = true
@@ -37,6 +37,34 @@ RSpec.describe Chat::DirectMessagesController do
       end
     end
 
+    context "when a category channel exists with the same chatable_id as the direct message" do
+      it "returns the direct message channel, not the category channel" do
+        category = Fabricate(:category, name: "Secret Category")
+        cat_channel =
+          Chat::CategoryChannel.create!(
+            chatable: category,
+            chatable_type: "Category",
+            name: "Secret Category",
+          )
+
+        dm = Chat::DirectMessage.create!
+        dm.direct_message_users.create!(user_id: user.id)
+        dm.direct_message_users.create!(user_id: user1.id)
+        dm_channel = Chat::DirectMessageChannel.create!(chatable: dm)
+
+        DB.exec(
+          "UPDATE chat_channels SET chatable_id = :target_id WHERE id = :channel_id",
+          target_id: dm.id,
+          channel_id: cat_channel.id,
+        )
+
+        get "/chat/direct_messages.json", params: { usernames: user1.username }
+        expect(response.status).to eq(200)
+        expect(response.parsed_body["channel"]["id"]).to eq(dm_channel.id)
+        expect(response.parsed_body["channel"]["chatable_type"]).to eq("DirectMessage")
+      end
+    end
+
     context "when channel exists" do
       let!(:channel) do
         direct_messages_channel = Chat::DirectMessage.create!
@@ -52,7 +80,7 @@ RSpec.describe Chat::DirectMessagesController do
       end
 
       context "with more than two users" do
-        fab!(:user3) { Fabricate(:user) }
+        fab!(:user3, :user)
         before { channel.chatable.direct_message_users.create!(user_id: user3.id) }
 
         it "returns the channel" do

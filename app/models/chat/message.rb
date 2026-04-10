@@ -57,6 +57,10 @@ module Chat
              dependent: :destroy,
              class_name: "Chat::Mention",
              foreign_key: :chat_message_id
+    has_one :pinned_message,
+            class_name: "Chat::PinnedMessage",
+            foreign_key: :chat_message_id,
+            dependent: :destroy
     has_many :user_mentions,
              dependent: :destroy,
              class_name: "Chat::UserMention",
@@ -73,6 +77,7 @@ module Chat
             dependent: :destroy,
             class_name: "Chat::HereMention",
             foreign_key: :chat_message_id
+    has_one :message_search_data, dependent: :destroy, foreign_key: :chat_message_id
 
     scope :in_public_channel,
           -> do
@@ -118,7 +123,7 @@ module Chat
 
     validate :validate_message
     def validate_message
-      WatchedWordsValidator.new(attributes: [:message]).validate(self)
+      WatchedWordsValidator.new(attributes: [:message]).validate(self) if !user&.bot?
 
       if self.new_record? || self.changed.include?("message")
         Chat::DuplicateMessageValidator.new(self).validate
@@ -168,6 +173,10 @@ module Chat
       Emoji.gsub_emoji_to_unicode(message).truncate(400)
     end
 
+    def only_uploads?
+      self.message.blank? && self.uploads.present?
+    end
+
     def to_markdown
       upload_markdown =
         self
@@ -193,9 +202,11 @@ module Chat
       invalidate_parsed_mentions
     end
 
-    def rebake!(invalidate_oneboxes: false, priority: nil)
+    def rebake!(invalidate_oneboxes: false, priority: nil, skip_notifications: false)
       ensure_last_editor_id
-      args = { chat_message_id: self.id, invalidate_oneboxes: invalidate_oneboxes }
+      args = { chat_message_id: self.id }
+      args[:invalidate_oneboxes] = true if invalidate_oneboxes
+      args[:skip_notifications] = true if skip_notifications
       args[:queue] = priority.to_s if priority && priority != :normal
       Jobs.enqueue(Jobs::Chat::ProcessMessage, args)
     end
@@ -210,7 +221,6 @@ module Chat
       chat-transcript
       discourse-local-dates
       emoji
-      emojiShortcuts
       inlineEmoji
       html-img
       hashtag-autocomplete
@@ -242,6 +252,7 @@ module Chat
       emphasis
       replacements
       escape
+      entity
     ]
 
     def self.cook(message, opts = {})
@@ -249,6 +260,7 @@ module Chat
 
       features = MARKDOWN_FEATURES.dup
       features << "image-grid" if bot
+      features << "emojiShortcuts" if SiteSetting.enable_emoji_shortcuts
 
       rules = MARKDOWN_IT_RULES.dup
       rules << "heading" if bot
@@ -394,25 +406,29 @@ end
 # Table name: chat_messages
 #
 #  id              :bigint           not null, primary key
-#  chat_channel_id :integer          not null
+#  chat_channel_id :bigint           not null
 #  user_id         :integer
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
 #  deleted_at      :datetime
 #  deleted_by_id   :integer
-#  in_reply_to_id  :integer
+#  in_reply_to_id  :bigint
 #  message         :text
 #  cooked          :text
 #  cooked_version  :integer
 #  last_editor_id  :integer          not null
-#  thread_id       :integer
+#  thread_id       :bigint
+#  streaming       :boolean          default(FALSE), not null
+#  excerpt         :string(1000)
+#  created_by_sdk  :boolean          default(FALSE), not null
+#  blocks          :jsonb
 #
 # Indexes
 #
 #  idx_chat_messages_by_created_at_not_deleted            (created_at) WHERE (deleted_at IS NULL)
 #  idx_chat_messages_by_thread_id_not_deleted             (thread_id) WHERE (deleted_at IS NULL)
 #  index_chat_messages_on_chat_channel_id_and_created_at  (chat_channel_id,created_at)
-#  index_chat_messages_on_chat_channel_id_and_id          (chat_channel_id,id) WHERE (deleted_at IS NULL)
+#  index_chat_messages_on_chat_channel_id_and_id          (chat_channel_id,id) WHERE (deleted_at IS NOT NULL)
 #  index_chat_messages_on_last_editor_id                  (last_editor_id)
 #  index_chat_messages_on_thread_id                       (thread_id)
 #

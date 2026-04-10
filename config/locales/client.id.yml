@@ -27,6 +27,11 @@ id:
             chat:
               create_message: "Buat pesan obrolan di kanal tertentu"
     chat:
+      edit_category:
+        tab_title: "Obrolan"
+        description: "Deskripsi"
+        actions: "Aksi"
+        settings: "Pengaturan"
       text_copied: Teks disalin ke papan klip
       link_copied: Tautan disalin ke papan klip
       deleted_chat_username: dihapus
@@ -51,6 +56,7 @@ id:
         add: "Menambahkan"
         close_channel: "Tutup kanal"
         open_channel: "Buka kanal"
+        notification_settings_context: "Pemberitahuan"
         join: "Gabung"
         leave: "Keluar"
       channels_list_popup:
@@ -78,9 +84,7 @@ id:
           unreachable_1: "@%{group} tidak mengizinkan penyebutan."
           unreachable_multiple:
             other: "@%{group} dan %{count} grup lainnya tidak mengizinkan penyebutan."
-      no_direct_message_channels: "Anda belum bergabung dengan pesan langsung apa pun!"
       no_direct_message_channels_cta: "Memulai percakapan"
-      no_public_channels: "Anda belum bergabung dengan kanal mana pun!"
       no_public_channels_cta: "Jelajahi kanal"
       placeholder_silenced: "Anda tidak dapat mengirim pesan saat ini."
       reply: "Balas"
@@ -116,6 +120,8 @@ id:
         tabs:
           members: Anggota
           settings: Pengaturan
+          search: Cari
+        remove_member: "Hapus"
       new_message_modal:
         title: Kirim pesan
         add_user_long: <kbd>shift + click</kbd> atau <kbd>shift + enter</kbd><span>Tambahkan @%{username}</span>
@@ -166,6 +172,10 @@ id:
           description: "Ini mengekspor semua pesan dari semua kanal."
           create_export: "Buat ekspor"
           export_has_started: "Ekspor telah dimulai. Anda akan menerima PM jika sudah siap."
+      search:
+        short_title: Cari
+        sort:
+          latest: "Terbaru"
       direct_messages:
         cannot_create: "Maaf, Anda tidak dapat mengirim pesan langsung."
       channel_list:

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-RSpec.describe "List channels | mobile", type: :system, mobile: true do
-  fab!(:current_user) { Fabricate(:user) }
+RSpec.describe "List channels | mobile", mobile: true do
+  fab!(:current_user, :user)
 
   let(:chat) { PageObjects::Pages::Chat.new }
   let(:topic_page) { PageObjects::Pages::Topic.new }
@@ -13,7 +13,7 @@ RSpec.describe "List channels | mobile", type: :system, mobile: true do
 
   context "when channels present" do
     context "when category channels" do
-      fab!(:category_channel_1) { Fabricate(:category_channel) }
+      fab!(:category_channel_1, :category_channel)
 
       it "doesn’t show the last message" do
         message =
@@ -122,7 +122,7 @@ RSpec.describe "List channels | mobile", type: :system, mobile: true do
 
     context "when direct message channels" do
       fab!(:dm_channel_1) { Fabricate(:direct_message_channel, users: [current_user]) }
-      fab!(:inaccessible_dm_channel_1) { Fabricate(:direct_message_channel) }
+      fab!(:inaccessible_dm_channel_1, :direct_message_channel)
 
       it "show the last message" do
         message =
@@ -158,7 +158,7 @@ RSpec.describe "List channels | mobile", type: :system, mobile: true do
     it "shows the empty channel list" do
       visit("/chat/channels")
 
-      expect(page).to have_selector(".channel-list-empty-message")
+      expect(page).to have_selector(".empty-state")
     end
 
     context "when user can create channels" do
@@ -235,16 +235,37 @@ RSpec.describe "List channels | mobile", type: :system, mobile: true do
       SiteSetting.chat_preferred_index = "my_threads"
     end
 
-    it "redirects to threads" do
-      channel = Fabricate(:chat_channel, threading_enabled: true)
-      channel.add(current_user)
+    context "when user has viewable threads" do
+      it "redirects to threads" do
+        channel = Fabricate(:chat_channel, threading_enabled: true)
+        channel.add(current_user)
+        other_user = Fabricate(:user)
+        channel.add(other_user)
 
-      visit("/chat")
+        message = Fabricate(:chat_message, chat_channel: channel, user: current_user)
+        thread = Fabricate(:chat_thread, channel: channel, original_message: message)
+        thread.add(current_user)
+        Fabricate(:chat_message, chat_channel: channel, thread: thread, user: other_user)
+        thread.set_replies_count_cache(1, update_db: true)
 
-      expect(page).to have_current_path("/chat/threads")
+        visit("/chat")
+
+        expect(page).to have_current_path("/chat/threads")
+      end
     end
 
-    context "when no threads" do
+    context "when user has no viewable threads" do
+      it "redirects to browse" do
+        channel = Fabricate(:chat_channel, threading_enabled: true)
+        channel.add(current_user)
+
+        visit("/chat")
+
+        expect(page).to have_current_path("/chat/browse/open")
+      end
+    end
+
+    context "when threads feature is disabled" do
       before { SiteSetting.chat_threads_enabled = false }
 
       it "redirects to browse" do

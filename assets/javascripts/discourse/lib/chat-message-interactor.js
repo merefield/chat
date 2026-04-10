@@ -2,6 +2,7 @@ import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { getOwner, setOwner } from "@ember/owner";
 import { service } from "@ember/service";
+import { isSkinTonableEmoji } from "pretty-text/emoji";
 import EmojiPickerDetached from "discourse/components/emoji-picker/detached";
 import BookmarkModal from "discourse/components/modal/bookmark";
 import FlagModal from "discourse/components/modal/flag";
@@ -11,6 +12,7 @@ import { bind } from "discourse/lib/decorators";
 import getURL from "discourse/lib/get-url";
 import { clipboardCopy } from "discourse/lib/utilities";
 import Bookmark from "discourse/models/bookmark";
+import { DEFAULT_DIVERSITY } from "discourse/services/emoji-store";
 import { i18n } from "discourse-i18n";
 import { MESSAGE_CONTEXT_THREAD } from "discourse/plugins/chat/discourse/components/chat-message";
 import ChatMessageFlag from "discourse/plugins/chat/discourse/lib/chat-message-flag";
@@ -29,9 +31,8 @@ export function resetRemovedChatComposerSecondaryActions() {
   removedSecondaryActions.clear();
 }
 
-export default class ChatemojiReactions {
+export default class ChatMessageInteractor {
   @service appEvents;
-  @service dialog;
   @service chat;
   @service chatChannelComposer;
   @service chatThreadComposer;
@@ -40,7 +41,6 @@ export default class ChatemojiReactions {
   @service chatApi;
   @service currentUser;
   @service site;
-  @service router;
   @service modal;
   @service capabilities;
   @service siteSettings;
@@ -60,13 +60,38 @@ export default class ChatemojiReactions {
   }
 
   get emojiReactions() {
-    const defaultReactions = this.siteSettings.default_emoji_reactions
+    const userQuickReactionsCustom = (
+      (this.currentUser.user_option.chat_quick_reaction_type === "custom" &&
+        this.currentUser.user_option.chat_quick_reactions_custom) ||
+      ""
+    )
       .split("|")
       .filter(Boolean);
 
-    return this.emojiStore
-      .favoritesForContext(`channel_${this.message.channel.id}`)
-      .concat(defaultReactions)
+    const frequentReactions = this.emojiStore.favoritesForContext("chat");
+
+    const defaultReactions = this.siteSettings.default_emoji_reactions
+      .split("|")
+      .map((emoji) => {
+        if (
+          this.emojiStore.diversity !== DEFAULT_DIVERSITY &&
+          isSkinTonableEmoji(emoji)
+        ) {
+          return `${emoji}:t${this.emojiStore.diversity}`;
+        }
+
+        return emoji;
+      });
+
+    const allReactionsInOrder = userQuickReactionsCustom
+      .concat(frequentReactions)
+      .concat(defaultReactions);
+
+    return allReactionsInOrder
+      .filter((item, index) => {
+        return allReactionsInOrder.indexOf(item) === index;
+      })
+      .filter(Boolean)
       .slice(0, 3)
       .map(
         (emoji) =>
@@ -92,7 +117,8 @@ export default class ChatemojiReactions {
   get canInteractWithMessage() {
     return (
       !this.message?.deletedAt &&
-      this.message?.channel?.canModifyMessages(this.currentUser)
+      this.message?.channel?.canModifyMessages(this.currentUser) &&
+      this.message?.channel?.isFollowing
     );
   }
 
@@ -100,6 +126,7 @@ export default class ChatemojiReactions {
     return (
       this.message?.deletedAt &&
       (this.currentUser.staff ||
+        this.message?.channel?.canModerate ||
         (this.message?.user?.id === this.currentUser.id &&
           this.message?.deletedById === this.currentUser.id)) &&
       this.message.channel?.canModifyMessages?.(this.currentUser)
@@ -128,6 +155,13 @@ export default class ChatemojiReactions {
       !this.message?.chatWebhookEvent &&
       !this.message?.deletedAt
     );
+  }
+
+  get canPinMessage() {
+    if (!this.siteSettings.chat_pinned_messages) {
+      return false;
+    }
+    return this.message.channel?.canManagePins;
   }
 
   get canRebakeMessage() {
@@ -190,6 +224,22 @@ export default class ChatemojiReactions {
       });
     }
 
+    if (this.canPinMessage && !this.message.pinned) {
+      buttons.push({
+        id: "pin",
+        name: i18n("chat.pin_message"),
+        icon: "thumbtack",
+      });
+    }
+
+    if (this.canPinMessage && this.message.pinned) {
+      buttons.push({
+        id: "unpin",
+        name: i18n("chat.unpin_message"),
+        icon: "thumbtack",
+      });
+    }
+
     if (this.canFlagMessage) {
       buttons.push({
         id: "flag",
@@ -222,7 +272,7 @@ export default class ChatemojiReactions {
       });
     }
 
-    return buttons.reject((button) => removedSecondaryActions.has(button.id));
+    return buttons.filter((button) => !removedSecondaryActions.has(button.id));
   }
 
   select(checked = true) {
@@ -248,7 +298,7 @@ export default class ChatemojiReactions {
   copyText() {
     clipboardCopy(this.message.message);
     this.toasts.success({
-      duration: 3000,
+      duration: "short",
       data: { message: i18n("chat.text_copied") },
     });
   }
@@ -268,7 +318,7 @@ export default class ChatemojiReactions {
     url = url.indexOf("/") === 0 ? protocol + "//" + host + url : url;
     clipboardCopy(url);
     this.toasts.success({
-      duration: 1500,
+      duration: "short",
       data: { message: i18n("chat.link_copied") },
     });
   }
@@ -307,6 +357,9 @@ export default class ChatemojiReactions {
         emoji,
         reactAction
       )
+      .then(() => {
+        this.emojiStore.trackEmojiForContext(emoji, "chat");
+      })
       .catch((errResult) => {
         popupAjaxError(errResult);
         this.message.react(
@@ -392,6 +445,41 @@ export default class ChatemojiReactions {
   }
 
   @action
+  pin() {
+    this.message.pinned = true;
+    this.message.channel.pinnedMessagesCount++;
+    this.message.channel.pendingOptimisticPins.add(this.message.id);
+
+    return this.chatApi
+      .pinMessage(this.message.channel.id, this.message.id)
+      .catch((error) => {
+        this.message.pinned = false;
+        this.message.channel.pinnedMessagesCount--;
+        this.message.channel.pendingOptimisticPins.delete(this.message.id);
+        popupAjaxError(error);
+      });
+  }
+
+  @action
+  unpin() {
+    this.message.pinned = false;
+    this.message.channel.pinnedMessagesCount = Math.max(
+      0,
+      this.message.channel.pinnedMessagesCount - 1
+    );
+    this.message.channel.pendingOptimisticUnpins.add(this.message.id);
+
+    return this.chatApi
+      .unpinMessage(this.message.channel.id, this.message.id)
+      .catch((error) => {
+        this.message.pinned = true;
+        this.message.channel.pinnedMessagesCount++;
+        this.message.channel.pendingOptimisticUnpins.delete(this.message.id);
+        popupAjaxError(error);
+      });
+  }
+
+  @action
   reply() {
     this.composer.replyTo(this.message);
   }
@@ -413,7 +501,7 @@ export default class ChatemojiReactions {
         this.interactedChatMessage.emojiPickerOpen = false;
       },
       data: {
-        context: `channel_${this.message.channel.id}`,
+        context: "chat",
         didSelectEmoji: (emoji) => {
           this.selectReaction(emoji);
         },

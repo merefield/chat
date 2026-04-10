@@ -9,7 +9,7 @@ RSpec.describe Chat::TrashMessage do
   describe ".call" do
     subject(:result) { described_class.call(params:, **dependencies) }
 
-    fab!(:current_user) { Fabricate(:user) }
+    fab!(:current_user, :user)
     fab!(:message) { Fabricate(:chat_message, user: current_user) }
 
     let(:guardian) { Guardian.new(current_user) }
@@ -198,6 +198,22 @@ RSpec.describe Chat::TrashMessage do
               result
               expect(thread.reload.last_message).to eq(thread.original_message)
             end
+          end
+        end
+
+        context "when message is pinned" do
+          fab!(:pin) do
+            Fabricate(
+              :chat_pinned_message,
+              chat_message: message,
+              chat_channel: message.chat_channel,
+            )
+          end
+
+          it "destroys the pin" do
+            pin_id = pin.id
+            expect { result }.to change { Chat::PinnedMessage.count }.by(-1)
+            expect(Chat::PinnedMessage.find_by(id: pin_id)).to be_nil
           end
         end
 

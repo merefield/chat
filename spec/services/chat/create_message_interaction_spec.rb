@@ -4,12 +4,13 @@ RSpec.describe Chat::CreateMessageInteraction do
   describe described_class::Contract, type: :model do
     it { is_expected.to validate_presence_of :message_id }
     it { is_expected.to validate_presence_of :action_id }
+    it { is_expected.to validate_presence_of :channel_id }
   end
 
   describe ".call" do
     subject(:result) { described_class.call(params:, **dependencies) }
 
-    fab!(:current_user) { Fabricate(:user) }
+    fab!(:current_user, :user)
     fab!(:message) do
       Fabricate(
         :chat_message,
@@ -34,7 +35,9 @@ RSpec.describe Chat::CreateMessageInteraction do
     end
 
     let(:guardian) { Guardian.new(current_user) }
-    let(:params) { { message_id: message.id, action_id: "xxx" } }
+    let(:params) do
+      { message_id: message.id, action_id: "xxx", channel_id: message.chat_channel_id }
+    end
     let(:dependencies) { { guardian: } }
 
     context "when all steps pass" do
@@ -61,7 +64,7 @@ RSpec.describe Chat::CreateMessageInteraction do
     end
 
     context "when user doesn't have access to the channel" do
-      fab!(:channel) { Fabricate(:private_category_channel) }
+      fab!(:channel, :private_category_channel)
 
       before { message.update!(chat_channel: channel) }
 

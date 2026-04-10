@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-RSpec.describe "Deleted channel", type: :system do
-  fab!(:channel_1) { Fabricate(:chat_channel) }
+RSpec.describe "Deleted channel" do
+  fab!(:channel_1, :chat_channel)
 
   let(:chat_page) { PageObjects::Pages::Chat.new }
 

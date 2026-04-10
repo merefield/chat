@@ -18,6 +18,7 @@ Chat::Engine.routes.draw do
     get "/channels/:channel_id" => "channels#show"
     put "/channels/:channel_id/status" => "channels_status#update"
     get "/channels/:channel_id/messages" => "channel_messages#index"
+    get "/search" => "search#index"
     put "/channels/:channel_id/messages/:message_id" => "channel_messages#update"
     post "/channels/:channel_id/messages/moves" => "channels_messages_moves#create"
     delete "/channels/:channel_id/messages/:message_id/streaming" =>
@@ -27,12 +28,18 @@ Chat::Engine.routes.draw do
     get "/channels/:channel_id/memberships" => "channels_memberships#index"
     post "/channels/:channel_id/memberships" => "channels_memberships#create"
     delete "/channels/:channel_id/memberships/me" => "channels_current_user_membership#destroy"
+    delete "/channels/:channel_id/memberships/:user_id" => "channels_memberships#destroy"
     delete "/channels/:channel_id/memberships/me/follows" =>
              "channels_current_user_membership_follows#destroy"
     put "/channels/:channel_id/memberships/me" => "channels_current_user_membership#update"
     post "/channels/:channel_id/memberships/me" => "channels_current_user_membership#create"
     put "/channels/:channel_id/notifications-settings/me" =>
           "channels_current_user_notifications_settings#update"
+
+    get "/channels/:channel_id/pins" => "channel_pins#index"
+    put "/channels/:channel_id/pins/read" => "channel_pins#mark_read"
+    post "/channels/:channel_id/messages/:message_id/pin" => "channel_pins#create"
+    delete "/channels/:channel_id/messages/:message_id/pin" => "channel_pins#destroy"
 
     # Category chatables controller hints. Only used by staff members, we don't want to leak category permissions.
     get "/category-chatables/:id/permissions" => "category_chatables#permissions",
@@ -68,16 +75,30 @@ Chat::Engine.routes.draw do
   get "/direct_messages" => "direct_messages#index"
 
   # incoming_webhooks_controller routes
-  post "/hooks/:key" => "incoming_webhooks#create_message"
+  post "/hooks/:key" => "incoming_webhooks#create_message",
+       :constraints => {
+         format: :json,
+       },
+       :defaults => {
+         format: :json,
+       }
 
   # incoming_webhooks_controller routes
-  post "/hooks/:key/slack" => "incoming_webhooks#create_message_slack_compatible"
+  post "/hooks/:key/slack" => "incoming_webhooks#create_message_slack_compatible",
+       :constraints => {
+         format: :json,
+       },
+       :defaults => {
+         format: :json,
+       }
 
   # chat_controller routes
   get "/" => "chat#respond"
+  get "/search" => "chat#respond"
   get "/new-message" => "chat#respond"
   get "/direct-messages" => "chat#respond"
   get "/channels" => "chat#respond"
+  get "/starred-channels" => "chat#respond"
   get "/threads" => "chat#respond"
   get "/browse" => "chat#respond"
   get "/browse/all" => "chat#respond"
@@ -95,7 +116,7 @@ Chat::Engine.routes.draw do
   get base_c_route => "chat#respond", :as => "channel"
   get "#{base_c_route}/:message_id" => "chat#respond"
 
-  %w[info info/about info/members info/settings].each do |route|
+  %w[info info/about info/members info/settings info/search].each do |route|
     get "#{base_c_route}/#{route}" => "chat#respond"
   end
 
@@ -110,7 +131,7 @@ Chat::Engine.routes.draw do
 
   get base_channel_route, to: redirect(redirect_base)
 
-  %w[info info/about info/members info/settings].each do |route|
+  %w[info info/about info/members info/settings info/search].each do |route|
     get "#{base_channel_route}/#{route}", to: redirect("#{redirect_base}/#{route}")
   end
 end

@@ -1,12 +1,5 @@
 .has-full-page-chat {
-  .global-notice,
-  .bootstrap-mode-notice {
-    display: none;
-  }
-}
-
-.admin-plugins {
-  [data-plugin-name="chat"] {
+  .global-notice {
     display: none;
   }
 }
@@ -19,7 +12,7 @@
     order: -2;
   }
 
-  li.user-profile-controls-outlet.chat-button {
+  li.chat-button {
     order: -1;
 
     &:empty {
@@ -30,4 +23,27 @@
 
 .user-main .collapsed-info .details .controls ul {
   flex-direction: row;
+}
+
+.sidebar-section-link-suffix.icon.starred {
+  color: var(--primary-low-mid);
+  font-size: var(--font-down-2);
+}
+
+.sidebar-section-link-content-badge.icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  svg {
+    font-size: var(--font-down-2);
+  }
+
+  &.urgent svg {
+    color: var(--success);
+  }
+
+  &.unread svg {
+    color: var(--d-sidebar-suffix-color);
+  }
 }

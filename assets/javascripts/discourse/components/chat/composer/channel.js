@@ -5,8 +5,10 @@ import { i18n } from "discourse-i18n";
 import ChatComposer from "../../chat-composer";
 
 export default class ChatComposerChannel extends ChatComposer {
-  @service("chat-channel-composer") composer;
-  @service("chat-channel-pane") pane;
+  // eslint-disable-next-line discourse/no-unused-services
+  @service("chat-channel-composer") composer; // used in the parent class
+  // eslint-disable-next-line discourse/no-unused-services
+  @service("chat-channel-pane") pane; // used in the parent class
   @service currentUser;
   @service chatDraftsManager;
 
@@ -46,7 +48,7 @@ export default class ChatComposerChannel extends ChatComposer {
   }
 
   get lastMessage() {
-    return this.args.channel.lastMessage;
+    return this.args.channel.messagesManager.findLastMessage();
   }
 
   lastUserMessage(user) {

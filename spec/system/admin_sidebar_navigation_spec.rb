@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
-describe "Admin Revamp | Sidebar Navigation | Plugin Links", type: :system do
+describe "Admin Revamp | Sidebar Navigation | Plugin Links" do
   fab!(:admin)
   let(:sidebar) { PageObjects::Components::NavigationMenu::Sidebar.new }
   let(:chat_page) { PageObjects::Pages::Chat.new }
 
   before do
     chat_system_bootstrap
-    SiteSetting.admin_sidebar_enabled_groups = Group::AUTO_GROUPS[:admins]
     sign_in(admin)
   end
 

@@ -6,9 +6,6 @@ module Chat
     include TypeMappable
     include HasCustomFields
 
-    # TODO (martin) Remove once we are using last_message instead,
-    # should be around August 2023.
-    self.ignored_columns = %w[last_message_sent_at]
     self.table_name = "chat_channels"
 
     belongs_to :chatable, polymorphic: true
@@ -28,7 +25,7 @@ module Chat
                class_name: "Chat::Message",
                foreign_key: :last_message_id,
                optional: true
-    has_one :icon_upload, class_name: "Upload", foreign_key: :id, primary_key: :icon_upload_id
+    has_many :pinned_messages, class_name: "Chat::PinnedMessage", foreign_key: :chat_channel_id
 
     def last_message
       super || NullMessage.new
@@ -57,9 +54,9 @@ module Chat
           end
     scope :public_channels,
           -> do
-            with_categories.where(chatable_type: public_channel_chatable_types).where(
-              "categories.id IS NOT NULL",
-            )
+            with_categories
+              .where(chatable_type: public_channel_chatable_types)
+              .where.not(categories: { id: nil })
           end
 
     delegate :empty?, to: :chat_messages, prefix: true
@@ -105,6 +102,7 @@ module Chat
     %i[
       category_channel?
       direct_message_channel?
+      direct_message_group?
       public_channel?
       chatable_has_custom_fields?
       read_restricted?
@@ -143,7 +141,14 @@ module Chat
     def remove(user)
       Chat::ChannelMembershipManager.new(self).unfollow(user)
     end
-    alias leave remove
+
+    def leave(user)
+      self.remove(user)
+    end
+
+    def pinned_messages_count
+      pinned_messages.size
+    end
 
     def url
       "#{Discourse.base_url}/chat/c/#{self.slug || "-"}/#{self.id}"
@@ -270,6 +275,7 @@ module Chat
           chat_channel_name: self.name,
           previous_value: status_previously_was,
           new_value: status,
+          category_id: category_channel? ? self.chatable_id : nil,
         },
       )
 
@@ -287,7 +293,7 @@ end
 # Table name: chat_channels
 #
 #  id                          :bigint           not null, primary key
-#  chatable_id                 :integer          not null
+#  chatable_id                 :bigint           not null
 #  deleted_at                  :datetime
 #  deleted_by_id               :integer
 #  featured_in_category_id     :integer
@@ -301,13 +307,13 @@ end
 #  user_count                  :integer          default(0), not null
 #  auto_join_users             :boolean          default(FALSE), not null
 #  user_count_stale            :boolean          default(FALSE), not null
-#  type                        :string
 #  slug                        :string
+#  type                        :string
 #  allow_channel_wide_mentions :boolean          default(TRUE), not null
 #  messages_count              :integer          default(0), not null
 #  threading_enabled           :boolean          default(FALSE), not null
 #  last_message_id             :bigint
-#  icon_upload_id              :integer
+#  emoji                       :string
 #
 # Indexes
 #

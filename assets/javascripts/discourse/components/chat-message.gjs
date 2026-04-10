@@ -1,17 +1,14 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { Input } from "@ember/component";
-import { concat, fn } from "@ember/helper";
+import { fn } from "@ember/helper";
 import { on } from "@ember/modifier";
 import { action } from "@ember/object";
 import { getOwner } from "@ember/owner";
-import didInsert from "@ember/render-modifiers/modifiers/did-insert";
-import didUpdate from "@ember/render-modifiers/modifiers/did-update";
 import willDestroy from "@ember/render-modifiers/modifiers/will-destroy";
 import { cancel, schedule } from "@ember/runloop";
 import { service } from "@ember/service";
 import { modifier } from "ember-modifier";
-import { eq, lt, not } from "truth-helpers";
 import DButton from "discourse/components/d-button";
 import EmojiPicker from "discourse/components/emoji-picker";
 import concatClass from "discourse/helpers/concat-class";
@@ -22,6 +19,7 @@ import discourseLater from "discourse/lib/later";
 import { applyValueTransformer } from "discourse/lib/transformer";
 import { updateUserStatusOnMention } from "discourse/lib/update-user-status-on-mention";
 import isZoomed from "discourse/lib/zoom-check";
+import { eq, lt, not } from "discourse/truth-helpers";
 import { i18n } from "discourse-i18n";
 import ChatMessageAvatar from "discourse/plugins/chat/discourse/components/chat/message/avatar";
 import ChatMessageError from "discourse/plugins/chat/discourse/components/chat/message/error";
@@ -52,17 +50,11 @@ export const MESSAGE_CONTEXT_THREAD = "thread";
 
 export default class ChatMessage extends Component {
   @service site;
-  @service dialog;
   @service currentUser;
-  @service appEvents;
-  @service capabilities;
   @service chat;
   @service chatApi;
   @service chatChannelPane;
   @service chatThreadPane;
-  @service chatChannelsManager;
-  @service router;
-  @service toasts;
   @service modal;
   @service interactedChatMessage;
 
@@ -71,7 +63,7 @@ export default class ChatMessage extends Component {
   toggleCheckIfPossible = modifier((element) => {
     let addedListener = false;
 
-    const handler = () => {
+    const handler = (event) => {
       if (!this.pane.selectingMessages) {
         return;
       }
@@ -98,6 +90,10 @@ export default class ChatMessage extends Component {
 
   get pane() {
     return this.threadContext ? this.chatThreadPane : this.chatChannelPane;
+  }
+
+  get includeSeparator() {
+    return this.args.includeSeparator ?? true;
   }
 
   get messageInteractor() {
@@ -145,7 +141,11 @@ export default class ChatMessage extends Component {
   }
 
   get shouldRenderOpenEmojiPickerButton() {
-    return this.chat.userCanInteractWithChat && this.site.desktopView;
+    return (
+      this.args.interactive !== false &&
+      this.chat.userCanInteractWithChat &&
+      this.site.desktopView
+    );
   }
 
   get secondaryActionsIsExpanded() {
@@ -186,7 +186,7 @@ export default class ChatMessage extends Component {
     cancel(this._invitationSentTimer);
     cancel(this._disableMessageActionsHandler);
     cancel(this._makeMessageActiveHandler);
-    cancel(this._debounceDecorateCookedMessageHandler);
+    cancel(this._onMouseEnterMessageDebouncedHandler);
     this.#teardownMentionedUsers();
     this.chat.activeMessage = null;
   }
@@ -205,36 +205,6 @@ export default class ChatMessage extends Component {
         });
       });
     });
-  }
-
-  @action
-  didInsertMessage(element) {
-    this.messageContainer = element;
-    this.initMentionedUsers();
-    this.decorateMentions(element);
-    this.debounceDecorateCookedMessage();
-    this.refreshStatusOnMentions();
-  }
-
-  @action
-  didUpdateMessageId() {
-    this.debounceDecorateCookedMessage();
-  }
-
-  @action
-  didUpdateMessageVersion() {
-    this.debounceDecorateCookedMessage();
-    this.refreshStatusOnMentions();
-    this.initMentionedUsers();
-  }
-
-  debounceDecorateCookedMessage() {
-    this._debounceDecorateCookedMessageHandler = discourseDebounce(
-      this,
-      this.decorateCookedMessage,
-      this.args.message,
-      100
-    );
   }
 
   initMentionedUsers() {
@@ -273,16 +243,18 @@ export default class ChatMessage extends Component {
 
       mentions.forEach((mention) => {
         mention.classList.add(...classes);
+        updateUserStatusOnMention(getOwner(this), mention, user.status);
       });
     });
   }
 
-  @action
-  decorateCookedMessage(message) {
-    schedule("afterRender", () => {
-      _chatMessageDecorators.forEach((decorator) => {
-        decorator.call(this, this.messageContainer, message.channel);
-      });
+  @bind
+  decorateCookedMessage(element, helper) {
+    this.messageContainer = element;
+    this.initMentionedUsers();
+    this.decorateMentions(element);
+    _chatMessageDecorators.forEach((decorator) => {
+      decorator(element, helper);
     });
   }
 
@@ -301,7 +273,10 @@ export default class ChatMessage extends Component {
       return;
     }
 
-    if (this.chat.activeMessage?.model?.id === this.args.message.id) {
+    if (
+      this.chat.activeMessage?.model?.id === this.args.message.id &&
+      this.chat.activeMessage?.context === this.args.context
+    ) {
       return;
     }
 
@@ -324,7 +299,10 @@ export default class ChatMessage extends Component {
       return;
     }
 
-    if (this.chat.activeMessage?.model?.id === this.args.message.id) {
+    if (
+      this.chat.activeMessage?.model?.id === this.args.message.id &&
+      this.chat.activeMessage?.context === this.args.context
+    ) {
       return;
     }
 
@@ -372,7 +350,7 @@ export default class ChatMessage extends Component {
   }
 
   _setActiveMessage() {
-    if (this.args.disableMouseEvents) {
+    if (this.args.disableMouseEvents || this.args.interactive === false) {
       return;
     }
 
@@ -388,6 +366,7 @@ export default class ChatMessage extends Component {
 
     this.chat.activeMessage = {
       model: this.args.message,
+      hideUserInfo: this.hideUserInfo,
       context: this.args.context,
     };
   }
@@ -429,6 +408,10 @@ export default class ChatMessage extends Component {
 
   @action
   onLongPressEnd(element, event) {
+    if (this.args.interactive === false) {
+      return;
+    }
+
     if (event.target.tagName === "IMG") {
       return;
     }
@@ -462,6 +445,10 @@ export default class ChatMessage extends Component {
 
   get hideUserInfo() {
     const message = this.args.message;
+
+    if (message.pinned) {
+      return false;
+    }
 
     const previousMessage = message.previousMessage;
 
@@ -564,10 +551,12 @@ export default class ChatMessage extends Component {
   <template>
     {{! template-lint-disable no-invalid-interactive }}
     {{#if this.shouldRender}}
-      <ChatMessageSeparator
-        @fetchMessagesByDate={{@fetchMessagesByDate}}
-        @message={{@message}}
-      />
+      {{#if this.includeSeparator}}
+        <ChatMessageSeparator
+          @fetchMessagesByDate={{@fetchMessagesByDate}}
+          @message={{@message}}
+        />
+      {{/if}}
 
       <div
         class={{concatClass
@@ -592,15 +581,13 @@ export default class ChatMessage extends Component {
           (if @message.deletedAt "-deleted")
           (if @message.selected "-selected")
           (if @message.error "-errored")
+          (if (eq @interactive false) "-not-interactive")
           (if this.showThreadIndicator "has-thread-indicator")
           (if this.hideUserInfo "-user-info-hidden")
           (if this.hasReply "has-reply")
         }}
         data-id={{@message.id}}
         data-thread-id={{@message.thread.id}}
-        {{didInsert this.didInsertMessage}}
-        {{didUpdate this.didUpdateMessageId @message.id}}
-        {{didUpdate this.didUpdateMessageVersion @message.version}}
         {{willDestroy this.willDestroyMessage}}
         {{on "mouseenter" this.onMouseEnter passive=true}}
         {{on "mouseleave" this.onMouseLeave passive=true}}
@@ -613,6 +600,8 @@ export default class ChatMessage extends Component {
         }}
         ...attributes
       >
+        {{yield to="top"}}
+
         {{#if this.show}}
           {{#if this.pane.selectingMessages}}
             <Input
@@ -651,20 +640,26 @@ export default class ChatMessage extends Component {
                   @threadContext={{this.threadContext}}
                 />
               {{else}}
-                <ChatMessageAvatar @message={{@message}} />
+                <ChatMessageAvatar
+                  @message={{@message}}
+                  @interactive={{@interactive}}
+                />
               {{/if}}
 
               <div class="chat-message-content">
                 <ChatMessageInfo
                   @message={{@message}}
                   @show={{not this.hideUserInfo}}
+                  @context={{@context}}
                   @threadContext={{this.threadContext}}
+                  @dateMode={{@dateMode}}
                 />
 
                 <ChatMessageText
                   @cooked={{@message.cooked}}
                   @uploads={{@message.uploads}}
                   @edited={{@message.edited}}
+                  @decorate={{this.decorateCookedMessage}}
                 >
                   {{#if @message.reactions.length}}
                     <div class="chat-message-reaction-list">
@@ -674,12 +669,13 @@ export default class ChatMessage extends Component {
                           @onReaction={{this.messageInteractor.react}}
                           @message={{@message}}
                           @showTooltip={{true}}
+                          @interactive={{@interactive}}
                         />
                       {{/each}}
 
                       {{#if this.shouldRenderOpenEmojiPickerButton}}
                         <EmojiPicker
-                          @context={{concat "channel_" @message.channel.id}}
+                          @context="chat"
                           @didSelectEmoji={{this.messageInteractor.selectReaction}}
                           @btnClass="btn-flat react-btn chat-message-react-btn"
                           @onClose={{this.onEmojiPickerClose}}

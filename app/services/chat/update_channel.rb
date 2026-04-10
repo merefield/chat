@@ -29,7 +29,7 @@ module Chat
     #   @option params [String,nil] :name
     #   @option params [String,nil] :description
     #   @option params [String,nil] :slug
-    #   @option params [Integer,nil] :icon_upload_id
+    #   @option params [String,nil] :emoji
     #   @option params [Boolean] :threading_enabled
     #   @option params [Boolean] :auto_join_users Only valid for {CategoryChannel}. Whether active users with permission to see the category should automatically join the channel.
     #   @option params [Boolean] :allow_channel_wide_mentions Allow the use of @here and @all in the channel.
@@ -44,11 +44,14 @@ module Chat
       attribute :threading_enabled, :boolean, default: false
       attribute :auto_join_users, :boolean, default: false
       attribute :allow_channel_wide_mentions, :boolean, default: true
-      attribute :icon_upload_id, :integer, default: nil
+      attribute :emoji, :string
 
       before_validation do
         assign_attributes(
-          attributes.symbolize_keys.slice(:name, :description, :slug).transform_values(&:presence),
+          attributes
+            .symbolize_keys
+            .slice(:name, :description, :slug, :emoji)
+            .transform_values(&:presence),
         )
       end
     end
