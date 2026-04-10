@@ -39,8 +39,6 @@ export default class ChatRouteChannelInfoSettings extends Component {
   @service toasts;
   @service router;
 
-  notificationLevels = NOTIFICATION_LEVELS;
-
   settingsSectionTitle = i18n("chat.settings.settings_title");
   channelInfoSectionTitle = i18n("chat.settings.info_title");
   categoryLabel = i18n("chat.settings.category_label");
@@ -60,6 +58,12 @@ export default class ChatRouteChannelInfoSettings extends Component {
   channelWideMentionsLabel = i18n("chat.settings.channel_wide_mentions_label");
   autoJoinLabel = i18n("chat.settings.auto_join_users_label");
   notificationsLevelLabel = i18n("chat.settings.notification_level");
+
+  // FORK EDIT: retain overridable notificationLevels getter for FEATURE: user channel option to suppress @all notifications
+  get notificationLevels() {
+    return NOTIFICATION_LEVELS;
+  }
+  // END FORK EDIT
 
   get canEditChannel() {
     if (
