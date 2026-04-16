@@ -10,7 +10,6 @@ import DButton from "discourse/components/d-button";
 import FilterInput from "discourse/components/filter-input";
 import icon from "discourse/helpers/d-icon";
 import discourseDebounce from "discourse/lib/debounce";
-import { bind } from "discourse/lib/decorators";
 import { INPUT_DELAY } from "discourse/lib/environment";
 import isElementInViewport from "discourse/lib/is-element-in-viewport";
 import DiscourseURL, { userPath } from "discourse/lib/url";
@@ -75,6 +74,12 @@ export default class ChatRouteChannelInfoMembers extends Component {
     };
   });
 
+  canRemoveMember = (user) => {
+    return (
+      this.args.channel.canRemoveMembers && user.id !== this.currentUser.id
+    );
+  };
+
   get noResults() {
     return this.members.fetchedOnce && !this.members.loading;
   }
@@ -122,13 +127,6 @@ export default class ChatRouteChannelInfoMembers extends Component {
     await this.chatApi.removeMemberFromChannel(this.args.channel.id, user.id);
     this.updatedAt = Date.now();
     this.load();
-  }
-
-  @bind
-  canRemoveMember(user) {
-    return (
-      this.args.channel.canRemoveMembers && user.id !== this.currentUser.id
-    );
   }
 
   async debouncedLoad() {
