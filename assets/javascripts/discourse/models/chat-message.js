@@ -1,11 +1,11 @@
 import { cached, tracked } from "@glimmer/tracking";
-import { trackedArray } from "@ember/reactive/collections";
+import { TrackedArray } from "@ember-compat/tracked-built-ins";
 import { removeValueFromArray } from "discourse/lib/array-tools";
 import { getOwnerWithFallback } from "discourse/lib/get-owner";
 import getURL from "discourse/lib/get-url";
 import discourseLater from "discourse/lib/later";
 import { generateCookFunction, parseMentions } from "discourse/lib/text";
-import { autoTrackedArray } from "discourse/lib/tracked-tools";
+import { trackedArray } from "discourse/lib/tracked-tools";
 import Bookmark from "discourse/models/bookmark";
 import User from "discourse/models/user";
 import transformAutolinks from "discourse/plugins/chat/discourse/lib/transform-auto-links";
@@ -53,8 +53,7 @@ export default class ChatMessage {
   @tracked manager;
   @tracked deletedById;
   @tracked streaming;
-  @tracked pinned;
-  @autoTrackedArray reactions;
+  @trackedArray reactions;
 
   @tracked _deletedAt;
   @tracked _cooked;
@@ -93,7 +92,7 @@ export default class ChatMessage {
         ? ChatMessage.create(channel, args.in_reply_to ?? args.replyToMsg)
         : null);
     this.reactions = this.#initChatMessageReactionModel(args.reactions);
-    this.uploads = trackedArray(args.uploads || []);
+    this.uploads = new TrackedArray(args.uploads || []);
     this.user = this.#initUserModel(args.user);
     this.bookmark = args.bookmark ? Bookmark.create(args.bookmark) : null;
     this.mentionedUsers = this.#initMentionedUsers(args.mentioned_users);
@@ -104,8 +103,6 @@ export default class ChatMessage {
     if (args.thread) {
       this.thread = args.thread;
     }
-
-    this.pinned = args.pinned ?? false;
   }
 
   get url() {
