@@ -72,12 +72,10 @@ export default class NewGroup extends Component {
               @value={{this.newGroupTitle}}
             />
 
-            {{! FORK EDIT: use overridable this.maxMembers in template for FIX: remove DM member limits for staff }}
             <MembersCount
               @count={{this.membersCount}}
-              @max={{this.maxMembers}}
+              @max={{this.siteSettings.chat_max_direct_message_users}}
             />
-            {{! END FORK EDIT }}
           </div>
         </div>
 

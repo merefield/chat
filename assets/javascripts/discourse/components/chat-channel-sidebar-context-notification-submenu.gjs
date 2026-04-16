@@ -5,38 +5,13 @@ import DButton from "discourse/components/d-button";
 import DropdownMenu from "discourse/components/dropdown-menu";
 import concatClass from "discourse/helpers/concat-class";
 import { popupAjaxError } from "discourse/lib/ajax-error";
-// FORK EDIT: FEATURE: user channel option to suppress @all notifications
-import { i18n } from "discourse-i18n";
-// END FORK EDIT
 
 export default class ChatChannelSidebarContextNotificationSubmenu extends Component {
   @service chatApi;
-  // FORK EDIT: FEATURE: user channel option to suppress @all notifications
-  @service currentUser;
-  @service siteSettings;
-  // END FORK EDIT
 
   get channel() {
     return this.args.data.channel;
   }
-
-  // FORK EDIT: FEATURE: user channel option to suppress @all notifications
-  get mentionNotificationLabel() {
-    if (!this.siteSettings.x_chat_customisations_enabled) {
-      return i18n("chat.notification_levels.mention");
-    }
-
-    return i18n("x_chat_customisations.notification_levels.mention", {
-      username: this.currentUser?.username,
-    });
-  }
-
-  get explicitMentionNotificationLabel() {
-    return i18n("x_chat_customisations.notification_levels.explicit_mention", {
-      username: this.currentUser?.username,
-    });
-  }
-  // END FORK EDIT
 
   @action
   isItemSelected(item) {
@@ -97,34 +72,16 @@ export default class ChatChannelSidebarContextNotificationSubmenu extends Compon
       </dropdown.item>
 
       <dropdown.item>
-        {{! FORK EDIT: FEATURE: user channel option to suppress @all notifications }}
         <DButton
           @action={{this.changePushNotifications "mention"}}
-          @translatedLabel={{this.mentionNotificationLabel}}
-          @title={{this.mentionNotificationLabel}}
+          @label="chat.notification_levels.mention"
+          @title="chat.notification_levels.mention"
           class={{concatClass
             "chat-channel-sidebar-link-menu__notification-level-mention"
             (if (this.isItemSelected "mention") "-selected")
           }}
         />
-        {{! END FORK EDIT }}
       </dropdown.item>
-
-      {{! FORK EDIT: FEATURE: user channel option to suppress @all notifications }}
-      {{#if this.siteSettings.x_chat_customisations_enabled}}
-        <dropdown.item>
-          <DButton
-            @action={{this.changePushNotifications "explicit_mention"}}
-            @translatedLabel={{this.explicitMentionNotificationLabel}}
-            @title={{this.explicitMentionNotificationLabel}}
-            class={{concatClass
-              "chat-channel-sidebar-link-menu__notification-level-explicit-mention"
-              (if (this.isItemSelected "explicit_mention") "-selected")
-            }}
-          />
-        </dropdown.item>
-      {{/if}}
-      {{! END FORK EDIT }}
 
       <dropdown.item>
         <DButton
