@@ -5,36 +5,22 @@ import DButton from "discourse/components/d-button";
 import DropdownMenu from "discourse/components/dropdown-menu";
 import concatClass from "discourse/helpers/concat-class";
 import { popupAjaxError } from "discourse/lib/ajax-error";
-// FORK EDIT: FEATURE: user channel option to suppress @all notifications
 import { i18n } from "discourse-i18n";
-// END FORK EDIT
 
 export default class ChatChannelSidebarContextNotificationSubmenu extends Component {
   @service chatApi;
-  // FORK EDIT: FEATURE: user channel option to suppress @all notifications
-  @service currentUser;
-  @service siteSettings;
-  // END FORK EDIT
 
   get channel() {
     return this.args.data.channel;
   }
 
-  // FORK EDIT: FEATURE: user channel option to suppress @all notifications
-  get mentionNotificationLabel() {
-    if (!this.siteSettings.x_chat_customisations_enabled) {
-      return i18n("chat.notification_levels.mention");
-    }
-
-    return i18n("x_chat_customisations.notification_levels.mention", {
-      username: this.currentUser?.username,
-    });
-  }
-
-  get explicitMentionNotificationLabel() {
-    return i18n("x_chat_customisations.notification_levels.explicit_mention", {
-      username: this.currentUser?.username,
-    });
+  // FORK EDIT: expose an overridable sidebar notification options seam for x-chat-customisations
+  get notificationLevelOptions() {
+    return ["never", "mention", "always"].map((value) => ({
+      value,
+      name: i18n(`chat.notification_levels.${value}`),
+      className: `chat-channel-sidebar-link-menu__notification-level-${value}`,
+    }));
   }
   // END FORK EDIT
 
@@ -84,59 +70,21 @@ export default class ChatChannelSidebarContextNotificationSubmenu extends Compon
 
   <template>
     <DropdownMenu as |dropdown|>
-      <dropdown.item>
-        <DButton
-          @action={{this.changePushNotifications "never"}}
-          @label="chat.notification_levels.never"
-          @title="chat.notification_levels.never"
-          class={{concatClass
-            "chat-channel-sidebar-link-menu__notification-level-never"
-            (if (this.isItemSelected "never") "-selected")
-          }}
-        />
-      </dropdown.item>
-
-      <dropdown.item>
-        {{! FORK EDIT: FEATURE: user channel option to suppress @all notifications }}
-        <DButton
-          @action={{this.changePushNotifications "mention"}}
-          @translatedLabel={{this.mentionNotificationLabel}}
-          @title={{this.mentionNotificationLabel}}
-          class={{concatClass
-            "chat-channel-sidebar-link-menu__notification-level-mention"
-            (if (this.isItemSelected "mention") "-selected")
-          }}
-        />
-        {{! END FORK EDIT }}
-      </dropdown.item>
-
-      {{! FORK EDIT: FEATURE: user channel option to suppress @all notifications }}
-      {{#if this.siteSettings.x_chat_customisations_enabled}}
+      {{! FORK EDIT: render overridable sidebar notification options from the seam above }}
+      {{#each this.notificationLevelOptions as |option|}}
         <dropdown.item>
           <DButton
-            @action={{this.changePushNotifications "explicit_mention"}}
-            @translatedLabel={{this.explicitMentionNotificationLabel}}
-            @title={{this.explicitMentionNotificationLabel}}
+            @action={{this.changePushNotifications option.value}}
+            @translatedLabel={{option.name}}
+            @title={{option.name}}
             class={{concatClass
-              "chat-channel-sidebar-link-menu__notification-level-explicit-mention"
-              (if (this.isItemSelected "explicit_mention") "-selected")
+              option.className
+              (if (this.isItemSelected option.value) "-selected")
             }}
           />
         </dropdown.item>
-      {{/if}}
+      {{/each}}
       {{! END FORK EDIT }}
-
-      <dropdown.item>
-        <DButton
-          @action={{this.changePushNotifications "always"}}
-          @label="chat.notification_levels.always"
-          @title="chat.notification_levels.always"
-          class={{concatClass
-            "chat-channel-sidebar-link-menu__notification-level-always"
-            (if (this.isItemSelected "always") "-selected")
-          }}
-        />
-      </dropdown.item>
 
       <dropdown.divider />
 
