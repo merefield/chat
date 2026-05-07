@@ -91,6 +91,22 @@ export default class ChatRouteChannelInfoSettings extends Component {
     return this.args.channel.isCategoryChannel;
   }
 
+  get shouldRenderPostingModeSection() {
+    return false;
+  }
+
+  get postingModeLabel() {
+    return "";
+  }
+
+  get postingModeOptions() {
+    return [];
+  }
+
+  get postingModeValue() {
+    return null;
+  }
+
   get shouldRenderArchiveRow() {
     return this.chatGuardian.canArchiveChannel(this.args.channel);
   }
@@ -291,6 +307,9 @@ export default class ChatRouteChannelInfoSettings extends Component {
       popupAjaxError(error);
     }
   }
+
+  @action
+  onChangePostingMode() {}
 
   @action
   async onToggleThreadingEnabled(value) {
@@ -556,6 +575,20 @@ export default class ChatRouteChannelInfoSettings extends Component {
                   <:description>
                     {{this.toggleThreadingDescription}}
                   </:description>
+                </section.row>
+              {{/if}}
+
+              {{#if this.shouldRenderPostingModeSection}}
+                <section.row @label={{this.postingModeLabel}}>
+                  <:action>
+                    <ComboBox
+                      @content={{this.postingModeOptions}}
+                      @value={{this.postingModeValue}}
+                      @valueProperty="value"
+                      @onChange={{this.onChangePostingMode}}
+                      class="c-channel-settings__selector c-channel-settings__posting-mode-selector"
+                    />
+                  </:action>
                 </section.row>
               {{/if}}
 
