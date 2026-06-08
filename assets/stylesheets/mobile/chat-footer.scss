@@ -15,9 +15,7 @@
     padding-bottom: 0;
   }
 
-  // FORK EDIT scope mobile route layout to top-level chat routes so nested
-  // channel-info routes are not clipped on narrow viewports.
-  #main-chat-outlet > .c-routes {
+  .c-routes {
     grid-area: list;
     display: flex;
     flex-direction: column;
