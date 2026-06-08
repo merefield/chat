@@ -39,7 +39,8 @@ const ROUTES = {
   },
   "chat.browse": {
     name: ChatDrawerRoutesBrowse,
-    extractParams: () => ({ currentTab: "open" }),
+    // FORK EDIT default drawer channel browse route to all channels
+    extractParams: () => ({ currentTab: "all" }),
   },
   "chat.browse.open": {
     name: ChatDrawerRoutesBrowse,

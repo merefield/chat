@@ -659,7 +659,8 @@ export default {
                   {
                     id: "browseChannels",
                     title: i18n("chat.channels_list_popup.browse"),
-                    action: () => this.router.transitionTo("chat.browse.open"),
+                    // FORK EDIT default channel browse action to all channels
+                    action: () => this.router.transitionTo("chat.browse"),
                   },
                 ];
               }
