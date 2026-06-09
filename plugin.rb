@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 # name: chat
-# about: Adds chat functionality to your site so it can natively support both long-form and short-form communication needs of your online community
+# about: (merefield CUSTOMISED FORK) Adds chat functionality to your site so it can natively support both long-form and short-form communication needs of your online community
 # meta_topic_id: 230881
-# version: 0.4
+# version: 0.4f
 # authors: Kane York, Mark VanLandingham, Martin Brennan, Joffrey Jaffeux
 # url: https://github.com/discourse/discourse/tree/main/plugins/chat
 # meta_topic_id: 230881
