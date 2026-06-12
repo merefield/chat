@@ -5,6 +5,8 @@ import { action } from "@ember/object";
 import { service } from "@ember/service";
 import EmojiPicker from "discourse/components/emoji-picker";
 import Form from "discourse/components/form";
+import PluginOutlet from "discourse/components/plugin-outlet";
+import lazyHash from "discourse/helpers/lazy-hash";
 import { popupAjaxError } from "discourse/lib/ajax-error";
 import { isTesting } from "discourse/lib/environment";
 import { translateModKey } from "discourse/lib/utilities";
@@ -118,6 +120,7 @@ export default class Chat extends Component {
       chat_quick_reactions_custom: emojis,
       only_chat_push_notifications: userOption.only_chat_push_notifications,
       ignore_channel_wide_mention: userOption.ignore_channel_wide_mention,
+      chat_email_frequency: userOption.chat_email_frequency,
       chat_sound: userOption.chat_sound,
       chat_header_indicator_preference:
         userOption.chat_header_indicator_preference,
@@ -203,6 +206,12 @@ export default class Chat extends Component {
         >
           <field.Control @value={{field.value}} />
         </form.Field>
+
+        {{! FORK EDIT expose Chat preferences notification-section outlet }}
+        <PluginOutlet
+          @name="chat-preferences-notifications-after-channel-wide-mentions"
+          @outletArgs={{lazyHash form=form data=data model=@model}}
+        />
 
         <form.Field
           @title={{i18n "chat.sound.title"}}
