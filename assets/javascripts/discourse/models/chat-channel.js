@@ -67,6 +67,7 @@ export default class ChatChannel {
   @tracked autoJoinUsers;
   @tracked allowChannelWideMentions;
   @tracked xChatPostingMode;
+  @tracked xChatSilentMemberAdds;
   @tracked membershipsCount;
   @tracked archive;
   @tracked tracking;
@@ -99,6 +100,7 @@ export default class ChatChannel {
     this.autoJoinUsers = args.auto_join_users;
     this.allowChannelWideMentions = args.allow_channel_wide_mentions;
     this.xChatPostingMode = args.x_chat_posting_mode;
+    this.xChatSilentMemberAdds = args.x_chat_silent_member_adds;
     this.currentUserMembership = args.current_user_membership;
     this.lastMessage = args.last_message;
     this.meta = args.meta;

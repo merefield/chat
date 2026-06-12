@@ -95,7 +95,15 @@ export default class ChatRouteChannelInfoSettings extends Component {
     return false;
   }
 
+  get shouldRenderSilentMemberAddsSection() {
+    return false;
+  }
+
   get postingModeLabel() {
+    return "";
+  }
+
+  get silentMemberAddsLabel() {
     return "";
   }
 
@@ -310,6 +318,9 @@ export default class ChatRouteChannelInfoSettings extends Component {
 
   @action
   onChangePostingMode() {}
+
+  @action
+  onToggleSilentMemberAdds() {}
 
   @action
   async onToggleThreadingEnabled(value) {
@@ -587,6 +598,25 @@ export default class ChatRouteChannelInfoSettings extends Component {
                       @valueProperty="value"
                       @onChange={{this.onChangePostingMode}}
                       class="c-channel-settings__selector c-channel-settings__posting-mode-selector"
+                    />
+                  </:action>
+                </section.row>
+              {{/if}}
+
+              {{! FORK EDIT expose silent member-adds setting seam }}
+              {{#if this.shouldRenderSilentMemberAddsSection}}
+                <section.row @label={{this.silentMemberAddsLabel}}>
+                  <:action>
+                    <DToggleSwitch
+                      @state={{@channel.xChatSilentMemberAdds}}
+                      class="c-channel-settings__silent-member-adds-switch"
+                      {{on
+                        "click"
+                        (fn
+                          this.onToggleSilentMemberAdds
+                          @channel.xChatSilentMemberAdds
+                        )
+                      }}
                     />
                   </:action>
                 </section.row>
