@@ -9,11 +9,11 @@ RSpec.describe Chat::InviteUsersToChannel do
   describe ".call" do
     subject(:result) { described_class.call(params:, **dependencies) }
 
-    fab!(:current_user) { Fabricate(:admin) }
-    fab!(:user_1) { Fabricate(:user) }
-    fab!(:user_2) { Fabricate(:user) }
-    fab!(:channel_1) { Fabricate(:chat_channel) }
-    fab!(:group_1) { Fabricate(:group) }
+    fab!(:current_user, :admin)
+    fab!(:user_1, :user)
+    fab!(:user_2, :user)
+    fab!(:channel_1, :chat_channel)
+    fab!(:group_1, :group)
 
     let(:guardian) { current_user.guardian }
     let(:user_ids) { [user_1.id, user_2.id] }
@@ -39,7 +39,7 @@ RSpec.describe Chat::InviteUsersToChannel do
         expect(notification).to be_nil
       end
 
-      it "doesnt create notifications for suspended users" do
+      it "doesn't create notifications for suspended users" do
         user_1.update!(suspended_till: 2.days.from_now, suspended_at: Time.now)
 
         result
@@ -48,7 +48,7 @@ RSpec.describe Chat::InviteUsersToChannel do
         expect(notification).to be_nil
       end
 
-      it "doesnt create notifications for users with disabled chat" do
+      it "doesn't create notifications for users with disabled chat" do
         user_1.user_option.update!(chat_enabled: false)
 
         result
@@ -83,11 +83,24 @@ RSpec.describe Chat::InviteUsersToChannel do
       it { is_expected.to fail_to_find_a_model(:channel) }
     end
 
-    context "when current user can't view channel" do
-      fab!(:current_user) { Fabricate(:user) }
-      fab!(:channel_1) { Fabricate(:private_category_channel) }
+    context "when current user can't join channel" do
+      fab!(:current_user, :user)
+      fab!(:channel_1, :private_category_channel)
 
-      it { is_expected.to fail_a_policy(:can_view_channel) }
+      it { is_expected.to fail_a_policy(:can_join_channel) }
+    end
+
+    context "when current user can view but not join channel" do
+      fab!(:current_user, :user)
+      fab!(:channel_1, :category_channel)
+
+      before do
+        channel_1.chatable.set_permissions(group_1 => :readonly)
+        channel_1.chatable.save!
+        group_1.add(current_user)
+      end
+
+      it { is_expected.to fail_a_policy(:can_join_channel) }
     end
   end
 end

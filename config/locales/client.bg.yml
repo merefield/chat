@@ -28,6 +28,11 @@ bg:
             chat:
               create_message: "Създаване на чат съобщение в зададен канал."
     chat:
+      edit_category:
+        tab_title: "Чат"
+        description: "Описание"
+        actions: "Действия"
+        settings: "Настройки"
       deleted_chat_username: изтрит
       dates:
         yesterday: "Вчера"
@@ -39,6 +44,7 @@ bg:
       cancel: "Прекрати"
       cancel_reply: "Отмяна на отговора"
       chat_channels: "Канали"
+      pinned: "Закована"
       browse_all_channels: "Преглед на всички канали"
       move_to_channel:
         title: "Преместване на съобщенията в канал"
@@ -49,6 +55,7 @@ bg:
       channel_settings:
         edit: "Редактирай"
         add: "Добави "
+        notification_settings_context: "Известия"
         join: "Влизане"
         leave: "Напусни"
       channel_delete:
@@ -82,7 +89,6 @@ bg:
         none: "Без"
       title: "чат"
       title_capitalized: "Чат"
-      exit: "назад"
       channel_status:
         closed: "Затворена"
         open: "Отвори"
@@ -95,6 +101,8 @@ bg:
       chat_message_separator:
         today: Днес
         yesterday: Вчера
+      search_view:
+        filter_placeholder: Търси съобщения
       about_view:
         title: Заглавие
         name: Име
@@ -104,6 +112,8 @@ bg:
         tabs:
           members: Членове
           settings: Настройки
+          search: Търсене
+        remove_member: "Премахване"
       new_message_modal:
         filter: "Филтър"
       direct_message_creator:
@@ -136,6 +146,11 @@ bg:
         members_label: "Членове"
       admin:
         title: "Чат"
+      search:
+        short_title: Търсене
+        sort:
+          relevance: "Приложимост"
+          latest: "Последни"
       channel_list:
         title: "Канали"
       incoming_webhooks:

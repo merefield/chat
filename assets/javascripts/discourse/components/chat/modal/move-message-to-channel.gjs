@@ -2,7 +2,7 @@ import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
-import { htmlSafe } from "@ember/template";
+import { trustHTML } from "@ember/template";
 import { isBlank } from "@ember/utils";
 import DButton from "discourse/components/d-button";
 import DModal from "discourse/components/d-modal";
@@ -11,7 +11,6 @@ import { i18n } from "discourse-i18n";
 import ChatChannelChooser from "../../chat-channel-chooser";
 
 export default class ChatModalMoveMessageToChannel extends Component {
-  @service chat;
   @service chatApi;
   @service router;
   @service chatChannelsManager;
@@ -38,11 +37,11 @@ export default class ChatModalMoveMessageToChannel extends Component {
     return (
       this.args.model.availableChannels ||
       this.chatChannelsManager.publicMessageChannels
-    ).rejectBy("id", this.sourceChannel.id);
+    ).filter((channel) => channel.id !== this.sourceChannel.id);
   }
 
   get instructionsText() {
-    return htmlSafe(
+    return trustHTML(
       i18n("chat.move_to_channel.instructions", {
         channelTitle: this.sourceChannel.escapedTitle,
         count: this.selectedMessageCount,

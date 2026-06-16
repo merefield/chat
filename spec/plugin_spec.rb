@@ -69,7 +69,7 @@ describe Chat do
   end
 
   describe "user card serializer extension #can_chat_user" do
-    fab!(:target_user) { Fabricate(:user) }
+    fab!(:target_user, :user)
     let!(:user) { Fabricate(:user) }
     let!(:guardian) { Guardian.new(user) }
     let(:serializer) { UserCardSerializer.new(target_user, scope: guardian) }
@@ -140,6 +140,16 @@ describe Chat do
           SiteSetting.direct_message_enabled_groups = 3
           expect(serializer.can_chat_user).to eq(false)
         end
+
+        it "returns false if target user has disabled private messages" do
+          target_user.user_option.update!(allow_private_messages: false)
+          expect(serializer.can_chat_user).to eq(false)
+        end
+
+        it "returns true even when user is not in personal_message_enabled_groups" do
+          SiteSetting.personal_message_enabled_groups = Group::AUTO_GROUPS[:staff]
+          expect(serializer.can_chat_user).to eq(true)
+        end
       end
     end
 
@@ -153,7 +163,7 @@ describe Chat do
   end
 
   describe "auto-joining users to a channel" do
-    fab!(:chatters_group) { Fabricate(:group) }
+    fab!(:chatters_group, :group)
     fab!(:user) { Fabricate(:user, last_seen_at: 15.minutes.ago, trust_level: 1) }
     let!(:channel) { Fabricate(:category_channel, auto_join_users: true, chatable: category) }
 
@@ -289,7 +299,7 @@ describe Chat do
     end
 
     context "when no joinable channel exist" do
-      fab!(:channel) { Fabricate(:chat_channel) }
+      fab!(:channel, :chat_channel)
 
       before do
         Fabricate(:user_chat_channel_membership, user: user, chat_channel: channel, following: true)
@@ -310,7 +320,7 @@ describe Chat do
     end
 
     context "when a joinable channel exists" do
-      fab!(:channel) { Fabricate(:chat_channel) }
+      fab!(:channel, :chat_channel)
 
       it "returns true" do
         expect(serializer.has_joinable_public_channels).to eq(true)
@@ -340,10 +350,10 @@ describe Chat do
           script: :send_chat_message,
         )
       end
-      fab!(:tag_1) { Fabricate(:tag) }
-      fab!(:user_1) { Fabricate(:admin) }
-      fab!(:topic_1) { Fabricate(:topic) }
-      fab!(:channel_1) { Fabricate(:chat_channel) }
+      fab!(:tag_1, :tag)
+      fab!(:user_1, :admin)
+      fab!(:topic_1, :topic)
+      fab!(:channel_1, :chat_channel)
 
       before do
         SiteSetting.discourse_automation_enabled = true
@@ -388,8 +398,8 @@ describe Chat do
           script: :send_chat_message,
         )
       end
-      fab!(:user_1) { Fabricate(:admin) }
-      fab!(:channel_1) { Fabricate(:chat_channel) }
+      fab!(:user_1, :admin)
+      fab!(:channel_1, :chat_channel)
 
       before do
         SiteSetting.discourse_automation_enabled = true

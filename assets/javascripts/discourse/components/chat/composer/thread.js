@@ -7,7 +7,8 @@ import ChatComposer from "../../chat-composer";
 
 export default class ChatComposerThread extends ChatComposer {
   @service("chat-channel-composer") channelComposer;
-  @service("chat-thread-composer") composer;
+  // eslint-disable-next-line discourse/no-unused-services
+  @service("chat-thread-composer") composer; // used in the parent class
   @service("chat-thread-pane") pane;
   @service currentUser;
   @service chatDraftsManager;
@@ -58,6 +59,10 @@ export default class ChatComposerThread extends ChatComposer {
     return i18n("chat.placeholder_thread");
   }
 
+  get lastMessage() {
+    return this.args.thread.messagesManager.findLastMessage();
+  }
+
   lastUserMessage(user) {
     return this.args.thread.messagesManager.findLastUserMessage(user);
   }
@@ -73,13 +78,8 @@ export default class ChatComposerThread extends ChatComposer {
       return;
     }
 
-    if (this.isFocused) {
-      event.stopPropagation();
-      this.composer.blur();
-    } else {
-      this.pane.close().then(() => {
-        this.channelComposer.focus();
-      });
-    }
+    this.pane.close().then(() => {
+      this.channelComposer.focus();
+    });
   }
 }

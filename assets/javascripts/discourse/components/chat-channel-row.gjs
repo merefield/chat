@@ -6,14 +6,14 @@ import didInsert from "@ember/render-modifiers/modifiers/did-insert";
 import willDestroy from "@ember/render-modifiers/modifiers/will-destroy";
 import { LinkTo } from "@ember/routing";
 import { service } from "@ember/service";
-import { htmlSafe } from "@ember/template";
+import { trustHTML } from "@ember/template";
 import { modifier as modifierFn } from "ember-modifier";
-import { and, eq } from "truth-helpers";
 import concatClass from "discourse/helpers/concat-class";
 import icon from "discourse/helpers/d-icon";
 import replaceEmoji from "discourse/helpers/replace-emoji";
 import { popupAjaxError } from "discourse/lib/ajax-error";
 import { bind } from "discourse/lib/decorators";
+import { and, eq } from "discourse/truth-helpers";
 import { i18n } from "discourse-i18n";
 import ChannelIcon from "discourse/plugins/chat/discourse/components/channel-icon";
 import ChannelName from "discourse/plugins/chat/discourse/components/channel-name";
@@ -23,11 +23,8 @@ import ToggleChannelMembershipButton from "discourse/plugins/chat/discourse/comp
 const FADEOUT_CLASS = "-fade-out";
 
 export default class ChatChannelRow extends Component {
-  @service api;
   @service capabilities;
   @service chat;
-  @service currentUser;
-  @service router;
   @service site;
 
   @tracked isAtThreshold = false;
@@ -37,7 +34,6 @@ export default class ChatChannelRow extends Component {
   @tracked shouldReset = false;
   @tracked diff = 0;
   @tracked rowStyle = null;
-  @tracked canSwipe = true;
 
   registerSwipableRow = modifierFn((element) => {
     this.swipableRow = element;
@@ -45,7 +41,7 @@ export default class ChatChannelRow extends Component {
 
   onReset = modifierFn((element) => {
     const handler = () => {
-      this.rowStyle = htmlSafe("margin-right: 0px;");
+      this.rowStyle = trustHTML("margin-right: 0px;");
       this.showRemoveButton = false;
       this.shouldReset = false;
     };
@@ -54,7 +50,7 @@ export default class ChatChannelRow extends Component {
 
     return () => {
       element.removeEventListener("transitionend", handler);
-      this.rowStyle = htmlSafe("margin-right: 0px;");
+      this.rowStyle = trustHTML("margin-right: 0px;");
       this.showRemoveButton = false;
       this.shouldReset = false;
     };
@@ -111,16 +107,16 @@ export default class ChatChannelRow extends Component {
         this.diff = threshold + (this.diff - threshold) * 0.1;
       }
 
-      this.rowStyle = htmlSafe(`margin-right: ${this.diff}px;`);
+      this.rowStyle = trustHTML(`margin-right: ${this.diff}px;`);
     } else {
-      this.rowStyle = htmlSafe("margin-right: 0px;");
+      this.rowStyle = trustHTML("margin-right: 0px;");
     }
   }
 
   @bind
   onSwipeEnd() {
     if (this.isAtThreshold) {
-      this.rowStyle = htmlSafe("margin-right: 0px;");
+      this.rowStyle = trustHTML("margin-right: 0px;");
       this.shouldRemoveChannel = true;
     } else {
       this.shouldReset = true;
@@ -155,7 +151,7 @@ export default class ChatChannelRow extends Component {
   }
 
   get #firstDirectMessageUser() {
-    return this.args.channel?.chatable?.users?.firstObject;
+    return this.args.channel?.chatable?.users?.[0];
   }
 
   @action
@@ -199,11 +195,13 @@ export default class ChatChannelRow extends Component {
       >
         <ChannelIcon @channel={{@channel}} />
         <div class="chat-channel-row__info">
-          <ChannelName @channel={{@channel}} @unreadIndicator={{true}} />
+          <div class="chat-channel-row__name-container">
+            <ChannelName @channel={{@channel}} @unreadIndicator={{true}} />
+          </div>
           <ChatChannelMetadata @channel={{@channel}} />
           {{#if this.shouldRenderLastMessage}}
             <div class="chat-channel__last-message">
-              {{replaceEmoji (htmlSafe @channel.lastMessage.excerpt)}}
+              {{replaceEmoji (trustHTML @channel.lastMessage.excerpt)}}
             </div>
           {{/if}}
         </div>

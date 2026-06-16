@@ -43,6 +43,12 @@ ja:
         chat_messages:
           other: "%{formatted_number} チャットメッセージ"
     chat:
+      edit_category:
+        tab_title: "チャット"
+        channel: "チャンネル"
+        description: "説明"
+        actions: "アクション"
+        settings: "設定"
       text_copied: テキストをクリップボードにコピーしました
       link_copied: リンクをクリップボードにコピーしました
       back_to_forum: "フォーラム"
@@ -57,8 +63,13 @@ ja:
       cancel: "キャンセル"
       cancel_reply: "返信をキャンセルする"
       chat_channels: "チャンネル"
+      starred: "スター付き"
+      starred_channels: "スター付きのチャンネル"
+      starred_channels_empty: "まだどのチャンネルにもスターを設定していません。チャンネルにスターを設定すると、ここで素早くアクセスできます。"
+      pinned: "固定"
       browse_all_channels: "すべてのチャンネルを閲覧する"
       see_in: "表示:"
+      open_channel_menu: "チャンネルメニューを開く"
       move_to_channel:
         title: "メッセージをチャンネルに移動する"
         instructions:
@@ -71,6 +82,8 @@ ja:
         title: "チャンネルの設定"
         edit: "編集"
         add: "追加"
+        star_channel: "チャンネルにスターを設定する"
+        unstar_channel: "チャンネルのスターを解除する"
         close_channel: "チャンネルを閉鎖する"
         open_channel: "チャンネルを開く"
         archive_channel: "チャンネルをアーカイブする"
@@ -78,6 +91,8 @@ ja:
         join_channel: "チャンネルに参加する"
         leave_channel: "チャンネルから退出する"
         leave_groupchat_info: "このグループチャットから退出すると、それにアクセスできなくなり、そのチャットに関連する通知を受信しなくなります。もう一度参加するには、グループチャットのメンバーから招待を受ける必要があります。"
+        notification_settings: "通知設定"
+        notification_settings_context: "通知"
         join: "参加"
         leave: "退出"
         save_label:
@@ -124,7 +139,7 @@ ja:
       email_frequency:
         description: "15 分以上アクセスがない場合にのみメールで通知します。"
         never: "なし"
-        title: "メール通知"
+        title: "チャットダイレクトメッセージまたはグループチャットを受信したらメールで通知する"
         when_away: "退席中の時のみ"
       header_indicator_preference:
         title: "ヘッダーにアクティビティインジケーターを表示"
@@ -135,12 +150,11 @@ ja:
       separate_sidebar_mode:
         title: "フォーラムとチャットに個別のサイドバーモードを表示する"
       send_shortcut:
+        title: "送信ショートカット"
         enter:
           label: "Enter で送信"
-          description: "Shift + Enter で改行"
         meta_enter:
           label: "%{meta_key} + Enter で送信"
-          description: "Enter で改行"
       enable: "チャットを有効にする"
       flag: "通報する"
       emoji: "絵文字を挿入する"
@@ -225,12 +239,12 @@ ja:
       no_public_channels: "まだチャンネルに参加していません！"
       no_public_channels_cta: "チャンネルを閲覧する"
       kicked_from_channel: "このチャンネルにアクセスできなくなりました。"
+      chat_notifications_title: "チャット通知"
       only_chat_push_notifications:
         title: "チャットのプッシュ通知のみ送信する"
-        description: "チャット以外のすべてのプッシュ通知の送信をブロックします"
+      personalization_title: "パーソナライズ"
       ignore_channel_wide_mention:
         title: "チャンネル全体のメンションを無視する"
-        description: "チャット全体のメンション（@here および @all）の通知を送信しません"
       show_thread_title_prompts:
         title: "スレッドタイトルのプロンプトの表示"
         description: "新しいスレッドのタイトルを設定するプロンプトを表示します"
@@ -286,7 +300,7 @@ ja:
       uploaded_files:
         other: "%{count} 個のファイル"
       you_flagged: "このメッセージを通報しました"
-      exit: "戻る"
+      exit: "チャットを終了"
       channel_status:
         read_only_header: "チャンネルは読み取り専用です"
         read_only: "読み取り専用"
@@ -310,6 +324,12 @@ ja:
       chat_message_separator:
         today: 今日
         yesterday: 昨日
+      search_view:
+        filter_placeholder: メッセージを検索
+        message_result_label: "%{username} からのチャットメッセージ: %{preview} %{threadInfo}"
+        in_thread: "スレッド %{title}"
+        sr_instructions: "Enter または Space キーを押してメッセージを開きます。Tab キーで結果間を移動します。"
+        results_list_label: "チャットメッセージの検索結果"
       members_view:
         filter_placeholder: メンバーを検索
         add_member: メンバーを追加
@@ -326,6 +346,8 @@ ja:
         tabs:
           members: メンバー
           settings: 設定
+          search: 検索
+        remove_member: "削除"
       new_message_modal:
         title: メッセージを送信する
         add_user_long: <kbd>Shift + クリック</kbd>または <kbd>Shift + Enter</kbd><span>@%{username} を追加</span>
@@ -350,6 +372,8 @@ ja:
         slug_description: チャンネルスラグはチャンネル名の代わりに URL で使用されます
         name: チャンネル名
         slug: チャンネルスラグ (オプション)
+        emoji: チャンネル絵文字 (オプション)
+        reset_emoji: 絵文字をリセット
       channel_edit_description_modal:
         title: 説明を編集する
         input_placeholder: 説明を追加する
@@ -402,8 +426,12 @@ ja:
         types:
           category: "カテゴリ"
           topic: "トピック"
+        emoji:
+          label: "チャンネル絵文字 (オプション)"
+          reset: "絵文字をリセット"
       reviewable:
         type: "チャットメッセージ"
+        message_in_channel: "チャンネル"
       reactions:
         only_you: ":%{emoji}: <span>でリアクションしました</span>"
         you_and_single_user: "<span>あなたと %{username} が :%{emoji}: でリアクションしました</span>"
@@ -441,6 +469,7 @@ ja:
         follow: "参加"
         followed: "参加中"
         mute: "チャンネルをミュート"
+        unmute: "チャンネルのミュートを解除する"
         threading_enabled: "有効"
         threading_disabled: "無効"
         muted_on: "オン"
@@ -464,6 +493,14 @@ ja:
           create_export: "エクスポートを作成"
           confirm_export: "これにより、すべてのチャンネルからすべてのメッセージがエクスポートされ、その結果が個人メッセージで送信されます。エクスポートしてもよろしいですか？"
           export_has_started: "エクスポートが開始されました。準備ができたら PM が届きます。"
+      search:
+        short_title: 検索
+        title: チャットを検索
+        aria_label: "チャット検索に切り替える"
+        no_results: "何も見つかりませんでした"
+        sort:
+          relevance: "関連性の高い項目"
+          latest: "最新"
       my_threads:
         title: 自分のスレッド
         aria_label: "スレッドリストに切り替える"
@@ -500,6 +537,7 @@ ja:
         select_emoji: "絵文字を選択"
         system: "システム"
         title: "着信 Webhook"
+        header_description: "受信 Webhook は、外部システムが指定されたチャットチャンネルにボットユーザーとしてメッセージを投稿するために使用できます。"
         url: "URL"
         url_instructions: "この URL には秘密の値が含まれます。安全に保管してください。"
         username: "ユーザー名"
@@ -536,11 +574,8 @@ ja:
           other: "%{commaSeparatedUsernames} と他 %{count} 人が入力中です"
       retention_reminders:
         indefinitely_short: "無期限"
-        indefinitely_long: "チャット設定は、チャンネルメッセージを無期限に保持するように設定されています。"
         short:
           other: "%{count} 日"
-        long:
-          other: "チャット設定は、チャンネルメッセージを %{count} 日間保持するように設定されています。"
       flags:
         off_topic: "このメッセージは、チャンネルのタイトルで定義された現在のディスカッションとは関係がないため、おそらく別の場所に移動する必要があります。"
         inappropriate: "このメッセージには、合理的な人が攻撃的、虐待的、または<a href=\"%{basePath}/guidelines\">コミュニティーガイドライン</a>に違反すると見なすコンテンツが含まれます。"
@@ -604,6 +639,11 @@ ja:
       draft_channel_screen:
         header: "新しいメッセージ"
         cancel: "キャンセル"
+      quick_reaction_type:
+        title: "チャットのワンクリックリアクション"
+        options:
+          frequent: "チャットで最も頻繫に使用されるリアクション"
+          custom: "カスタムリアクション"
     notifications:
       chat_invitation: "があなたをチャットチャンネルに招待しました"
       chat_invitation_html: "<span>%{username}</span> <span>があなたをチャットチャンネルに招待しました</span>"
@@ -660,11 +700,11 @@ ja:
           switch_channel_arrows: "%{shortcut} チャンネルを切り替える"
           switch__unread_channel_arrows: "%{shortcut} 未読チャンネルを切り替える"
           open_quick_channel_selector: "%{shortcut} クイックチャンネルセレクターを開く"
-          open_insert_link_modal: "%{shortcut} ハイパーリンクを挿入する (作成ツールのみ)"
+          open_insert_link_modal: "%{shortcut} リンクを挿入 (作成ツールのみ)"
           composer_bold: "%{shortcut} 太字 (作成ツールのみ)"
           composer_italic: "%{shortcut} 斜体 (作成ツールのみ)"
           composer_code: "%{shortcut} コード (作成ツールのみ)"
-          drawer_open: "%{shortcut} チャットドロワーを開く"
+          drawer_toggle: "%{shortcut} チャットドロワーを切り替える"
           drawer_close: "%{shortcut} チャットドロワーを閉じる"
           mark_all_channels_read: "%{shortcut} すべてのチャンネルを既読としてマークします"
     topic_statuses:
@@ -689,6 +729,9 @@ ja:
         chat:
           title: チャット
     sidebar:
+      start_new_dm:
+        text: 新しい DM を開始
+        title: パーソナルチャットを作成
       panels:
         chat:
           label: "チャット"

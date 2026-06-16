@@ -1,25 +1,23 @@
 # frozen_string_literal: true
 
-RSpec.describe "Message errors", type: :system do
+RSpec.describe "Message errors" do
   context "when message is too long" do
     let(:chat_page) { PageObjects::Pages::Chat.new }
     let(:dialog_page) { PageObjects::Components::Dialog.new }
     let(:max_length) { SiteSetting.chat_maximum_message_length }
     let(:message) { "atoolongmessage" + "a" * max_length }
 
-    fab!(:current_user) { Fabricate(:admin) }
+    fab!(:current_user, :admin)
+    fab!(:channel) { Fabricate(:chat_channel, threading_enabled: true) }
 
     before do
       chat_system_bootstrap
       sign_in(current_user)
+      channel.add(current_user)
     end
 
     context "when in channel" do
-      fab!(:channel) { Fabricate(:chat_channel) }
-
       let(:channel_page) { PageObjects::Pages::ChatChannel.new }
-
-      before { channel.add(current_user) }
 
       it "shows a dialog with the error and keeps the message in the input" do
         chat_page.visit_channel(channel)
@@ -34,7 +32,7 @@ RSpec.describe "Message errors", type: :system do
     end
 
     context "when in thread" do
-      fab!(:thread) { Fabricate(:chat_thread) }
+      fab!(:thread) { Fabricate(:chat_thread, channel: channel) }
 
       let(:thread_page) { PageObjects::Pages::ChatThread.new }
 

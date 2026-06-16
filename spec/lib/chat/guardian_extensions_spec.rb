@@ -1,16 +1,19 @@
 # frozen_string_literal: true
 
 RSpec.describe Chat::GuardianExtensions do
-  fab!(:chatters) { Fabricate(:group) }
+  fab!(:chatters, :group)
   fab!(:user) { Fabricate(:user, group_ids: [chatters.id], refresh_auto_groups: true) }
   fab!(:staff) { Fabricate(:admin, refresh_auto_groups: true) }
-  fab!(:chat_group) { Fabricate(:group) }
-  fab!(:channel) { Fabricate(:category_channel) }
-  fab!(:dm_channel) { Fabricate(:direct_message_channel) }
+  fab!(:chat_group, :group)
+  fab!(:channel, :category_channel)
+  fab!(:dm_channel, :direct_message_channel)
   let(:guardian) { Guardian.new(user) }
   let(:staff_guardian) { Guardian.new(staff) }
 
-  before { SiteSetting.chat_allowed_groups = chatters }
+  fab!(:private_group_create_post, :group)
+  fab!(:private_channel) { Fabricate(:private_category_channel, group: private_group_create_post) }
+
+  before { SiteSetting.chat_allowed_groups = chatters.id }
 
   describe "#can_chat?" do
     context "when the user is not in allowed to chat" do
@@ -42,6 +45,48 @@ RSpec.describe Chat::GuardianExtensions do
 
       it "cannot chat" do
         expect(guardian.can_chat?).to eq(false)
+      end
+    end
+
+    context "when user is a shadow account" do
+      fab!(:non_chatter) { Fabricate(:user, refresh_auto_groups: true) }
+
+      before { SiteSetting.allow_anonymous_mode = true }
+
+      context "when allow_chat_in_anonymous_mode is true" do
+        before { SiteSetting.allow_chat_in_anonymous_mode = true }
+
+        it "allows shadow account to chat if master account can chat" do
+          anonymous = AnonymousShadowCreator.get(user)
+          expect(anonymous.id).to be_present
+          expect(Guardian.new(anonymous).can_chat?).to eq(true)
+          expect(Guardian.new(user).can_chat?).to eq(true)
+        end
+
+        it "doesn't allow shadow account to chat if master account can not chat" do
+          anonymous = AnonymousShadowCreator.get(non_chatter)
+          expect(anonymous.id).to be_present
+          expect(Guardian.new(anonymous).can_chat?).to eq(false)
+          expect(Guardian.new(non_chatter).can_chat?).to eq(false)
+        end
+      end
+
+      context "when allow_chat_in_anonymous_mode is false" do
+        before { SiteSetting.allow_chat_in_anonymous_mode = false }
+
+        it "doesn't allow shadow account to chat even if master account can chat" do
+          anonymous = AnonymousShadowCreator.get(user)
+          expect(anonymous.id).to be_present
+          expect(Guardian.new(anonymous).can_chat?).to eq(false)
+          expect(Guardian.new(user).can_chat?).to eq(true)
+        end
+
+        it "doesn't allow shadow account to chat if master account can not chat" do
+          anonymous = AnonymousShadowCreator.get(non_chatter)
+          expect(anonymous.id).to be_present
+          expect(Guardian.new(anonymous).can_chat?).to eq(false)
+          expect(Guardian.new(non_chatter).can_chat?).to eq(false)
+        end
       end
     end
 
@@ -129,7 +174,7 @@ RSpec.describe Chat::GuardianExtensions do
 
     describe "#can_join_chat_channel?" do
       context "for direct message channels" do
-        fab!(:chatable) { Fabricate(:direct_message) }
+        fab!(:chatable, :direct_message)
         fab!(:channel) { Fabricate(:direct_message_channel, chatable: chatable) }
 
         it "returns false if the user is not part of the direct message" do
@@ -210,6 +255,59 @@ RSpec.describe Chat::GuardianExtensions do
                 channel.chatable,
                 post_allowed_category_ids: [channel.chatable.id],
               )
+            end
+          end
+
+          context "when user is a shadow account" do
+            fab!(:non_chatter) { Fabricate(:user, refresh_auto_groups: true) }
+
+            before do
+              SiteSetting.allow_anonymous_mode = true
+              private_group_create_post.add(user)
+            end
+
+            context "when allow_chat_in_anonymous_mode is true" do
+              before { SiteSetting.allow_chat_in_anonymous_mode = true }
+
+              it "allows shadow account to chat if master account can chat" do
+                anonymous = AnonymousShadowCreator.get(user)
+                expect(anonymous.id).to be_present
+                expect(
+                  Guardian.new(anonymous).can_post_in_chatable?(private_channel.chatable),
+                ).to eq(true)
+                expect(Guardian.new(user).can_post_in_chatable?(private_channel.chatable)).to eq(
+                  true,
+                )
+              end
+
+              it "doesn't allow shadow account to chat if master account can not chat" do
+                anonymous = AnonymousShadowCreator.get(non_chatter)
+                expect(anonymous.id).to be_present
+                expect(
+                  Guardian.new(anonymous).can_post_in_chatable?(private_channel.chatable),
+                ).to eq(false)
+                expect(
+                  Guardian.new(non_chatter).can_post_in_chatable?(private_channel.chatable),
+                ).to eq(false)
+              end
+            end
+
+            context "when allow_chat_in_anonymous_mode is false" do
+              before { SiteSetting.allow_chat_in_anonymous_mode = false }
+
+              it "doesn't allow shadow account to chat even if master account can chat" do
+                anonymous = AnonymousShadowCreator.get(user)
+                expect(anonymous.id).to be_present
+                expect(Guardian.new(anonymous).can_chat?).to eq(false)
+                expect(Guardian.new(user).can_chat?).to eq(true)
+              end
+
+              it "doesn't allow shadow account to chat if master account can not chat" do
+                anonymous = AnonymousShadowCreator.get(non_chatter)
+                expect(anonymous.id).to be_present
+                expect(Guardian.new(anonymous).can_chat?).to eq(false)
+                expect(Guardian.new(non_chatter).can_chat?).to eq(false)
+              end
             end
           end
 
@@ -381,7 +479,7 @@ RSpec.describe Chat::GuardianExtensions do
 
     describe "#can_restore_chat?" do
       fab!(:message) { Fabricate(:chat_message, chat_channel: channel, user: user) }
-      fab!(:chatable) { Fabricate(:category) }
+      fab!(:chatable, :category)
 
       context "when channel is closed" do
         before { channel.update!(status: :closed) }
@@ -467,8 +565,14 @@ RSpec.describe Chat::GuardianExtensions do
 
       context "when user is owner of the message" do
         context "when chatable is a category" do
-          it "allows to restore if owner can see category" do
+          it "allows owner to restore when deleted by owner" do
+            message.trash!(guardian.user)
             expect(guardian.can_restore_chat?(message, chatable)).to eq(true)
+          end
+
+          it "disallows owner to restore when deleted by staff" do
+            message.trash!(staff_guardian.user)
+            expect(guardian.can_restore_chat?(message, chatable)).to eq(false)
           end
 
           context "when category is restricted" do
@@ -637,7 +741,7 @@ RSpec.describe Chat::GuardianExtensions do
   end
 
   describe "#can_send_direct_message?" do
-    fab!(:other_user) { Fabricate(:user) }
+    fab!(:other_user, :user)
     fab!(:dm_channel) { Fabricate(:direct_message_channel, users: [user, other_user]) }
     alias_matcher :be_able_to_send_direct_message, :be_can_send_direct_message
 
@@ -698,7 +802,7 @@ RSpec.describe Chat::GuardianExtensions do
   end
 
   describe "#recipient_can_chat?" do
-    fab!(:other_user) { Fabricate(:user) }
+    fab!(:other_user) { Fabricate(:user, groups: [chatters]) }
     fab!(:dm_channel) { Fabricate(:direct_message_channel, users: [user, other_user]) }
     alias_matcher :be_able_to_chat, :be_recipient_can_chat
 
@@ -728,7 +832,7 @@ RSpec.describe Chat::GuardianExtensions do
   end
 
   describe "#recipient_not_muted?" do
-    fab!(:other_user) { Fabricate(:user) }
+    fab!(:other_user, :user)
 
     context "when target user is not muted" do
       it "returns true" do
@@ -746,7 +850,7 @@ RSpec.describe Chat::GuardianExtensions do
   end
 
   describe "#recipient_not_ignored?" do
-    fab!(:other_user) { Fabricate(:user) }
+    fab!(:other_user, :user)
 
     context "when target user is not ignored" do
       it "returns true" do
@@ -766,7 +870,7 @@ RSpec.describe Chat::GuardianExtensions do
   end
 
   describe "#recipient_allows_direct_messages?" do
-    fab!(:other_user) { Fabricate(:user) }
+    fab!(:other_user, :user)
     alias_matcher :be_able_to_receive_direct_message, :be_recipient_allows_direct_messages
 
     context "when target user has disabled private messages" do
@@ -826,6 +930,93 @@ RSpec.describe Chat::GuardianExtensions do
       it "returns true" do
         expect(staff_guardian).to be_able_to_receive_direct_message(other_user)
       end
+    end
+  end
+
+  describe "#can_manage_chat_message_pin?" do
+    fab!(:pin_channel, :chat_channel)
+    fab!(:message) { Fabricate(:chat_message, chat_channel: pin_channel) }
+    fab!(:pin_dm_channel) { Fabricate(:direct_message_channel, users: [user, Fabricate(:user)]) }
+    fab!(:dm_message) { Fabricate(:chat_message, chat_channel: pin_dm_channel) }
+
+    context "when user cannot chat" do
+      before { SiteSetting.chat_allowed_groups = Group::AUTO_GROUPS[:admins] }
+
+      it "returns false" do
+        expect(guardian.can_manage_chat_message_pin?(message)).to eq(false)
+      end
+    end
+
+    context "for category channels" do
+      context "when user is not staff" do
+        it "returns false" do
+          expect(guardian.can_manage_chat_message_pin?(message)).to eq(false)
+        end
+      end
+
+      context "when user is staff" do
+        it "returns true" do
+          expect(staff_guardian.can_manage_chat_message_pin?(message)).to eq(true)
+        end
+      end
+
+      context "when user is in pinning group but cannot access the channel" do
+        fab!(:private_group, :group)
+        fab!(:private_category) { Fabricate(:private_category, group: private_group) }
+        fab!(:private_pin_channel) { Fabricate(:category_channel, chatable: private_category) }
+        fab!(:private_message) { Fabricate(:chat_message, chat_channel: private_pin_channel) }
+
+        before do
+          SiteSetting.chat_pinning_messages_allowed_groups = "#{Group::AUTO_GROUPS[:trust_level_0]}"
+        end
+
+        it "returns false" do
+          expect(guardian.can_manage_chat_message_pin?(private_message)).to eq(false)
+        end
+      end
+
+      context "when user is in pinning group and can access the channel" do
+        fab!(:accessible_group, :group)
+        fab!(:accessible_category) { Fabricate(:private_category, group: accessible_group) }
+        fab!(:accessible_channel) { Fabricate(:category_channel, chatable: accessible_category) }
+        fab!(:accessible_message) { Fabricate(:chat_message, chat_channel: accessible_channel) }
+
+        before do
+          accessible_group.add(user)
+          SiteSetting.chat_pinning_messages_allowed_groups = "#{Group::AUTO_GROUPS[:trust_level_0]}"
+        end
+
+        it "returns true" do
+          expect(guardian.can_manage_chat_message_pin?(accessible_message)).to eq(true)
+        end
+      end
+    end
+
+    context "for direct message channels" do
+      context "when user is a member" do
+        it "returns true" do
+          expect(guardian.can_manage_chat_message_pin?(dm_message)).to eq(true)
+        end
+      end
+
+      context "when user is not a member" do
+        fab!(:other_user) { Fabricate(:user, group_ids: [chatters.id], refresh_auto_groups: true) }
+        let(:other_guardian) { Guardian.new(other_user) }
+
+        it "returns false" do
+          expect(other_guardian.can_manage_chat_message_pin?(dm_message)).to eq(false)
+        end
+      end
+    end
+  end
+
+  describe "#can_export_entity?" do
+    fab!(:moderator)
+
+    it "only allows admins to export chat_message" do
+      expect(Guardian.new(user).can_export_entity?("chat_message")).to eq(false)
+      expect(Guardian.new(moderator).can_export_entity?("chat_message")).to eq(false)
+      expect(staff_guardian.can_export_entity?("chat_message")).to eq(true)
     end
   end
 end

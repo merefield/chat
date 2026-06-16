@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-RSpec.describe "List channels | no sidebar", type: :system do
-  fab!(:current_user) { Fabricate(:user) }
+RSpec.describe "List channels | no sidebar" do
+  fab!(:current_user, :user)
 
   let(:chat) { PageObjects::Pages::Chat.new }
 
@@ -13,7 +13,7 @@ RSpec.describe "List channels | no sidebar", type: :system do
 
   context "when channels present" do
     context "when category channels" do
-      fab!(:category_channel_1) { Fabricate(:category_channel) }
+      fab!(:category_channel_1, :category_channel)
 
       context "when member of the channel" do
         before { category_channel_1.add(current_user) }
@@ -55,7 +55,7 @@ RSpec.describe "List channels | no sidebar", type: :system do
 
     context "when direct message channels" do
       fab!(:dm_channel_1) { Fabricate(:direct_message_channel, users: [current_user]) }
-      fab!(:inaccessible_dm_channel_1) { Fabricate(:direct_message_channel) }
+      fab!(:inaccessible_dm_channel_1, :direct_message_channel)
 
       context "when member of the channel" do
         it "shows the channel in the correct section" do
@@ -133,7 +133,7 @@ RSpec.describe "List channels | no sidebar", type: :system do
       expect(chat).to have_direct_message_channels_section
     end
 
-    context "with drawer prefered" do
+    context "with drawer preferred" do
       before { chat.prefers_drawer }
 
       it "shows the create direct message button in the drawer" do

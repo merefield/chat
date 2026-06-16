@@ -36,6 +36,10 @@ module PageObjects
       def has_no_channel?(name: nil)
         component.has_no_content?(name)
       end
+
+      def channel_names
+        component.all(".chat-channel-card__name").map(&:text)
+      end
     end
   end
 end

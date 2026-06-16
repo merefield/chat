@@ -44,6 +44,12 @@ fr:
           one: "%{formatted_number} message de discussion"
           other: "%{formatted_number} messages de discussion"
     chat:
+      edit_category:
+        tab_title: "Discussion"
+        channel: "Canal"
+        description: "Description"
+        actions: "Actions"
+        settings: "Paramètres"
       text_copied: Texte copié dans le presse-papiers
       link_copied: Lien copié dans le presse-papiers
       back_to_forum: "Forum"
@@ -58,6 +64,7 @@ fr:
       cancel: "Annuler"
       cancel_reply: "Annuler la réponse"
       chat_channels: "Canaux"
+      pinned: "Épinglé"
       browse_all_channels: "Parcourir tous les canaux"
       see_in: "Voir dans"
       move_to_channel:
@@ -81,6 +88,7 @@ fr:
         join_channel: "Rejoindre le canal"
         leave_channel: "Quitter le canal"
         leave_groupchat_info: "Si vous quittez cette discussion de groupe, vous n'y aurez plus accès et vous ne recevrez plus de notifications associées. Pour vous inscrire à nouveau, vous devrez être réinvité(e) par un membre de la discussion de groupe."
+        notification_settings_context: "Notifications"
         join: "Rejoindre"
         leave: "Quitter"
         save_label:
@@ -128,7 +136,6 @@ fr:
       email_frequency:
         description: "Nous ne vous enverrons un e-mail que si nous ne vous avons pas vu au cours des 15 dernières minutes."
         never: "Jamais"
-        title: "Notifications par e-mail"
         when_away: "Seulement en cas d'absence"
       header_indicator_preference:
         title: "Afficher l'indicateur d'activité dans l'en-tête"
@@ -141,10 +148,8 @@ fr:
       send_shortcut:
         enter:
           label: "Envoyer par Entrée"
-          description: "Nouvelle ligne avec Maj + Entrée"
         meta_enter:
           label: "Envoyer avec %{meta_key} + Entrée"
-          description: "Nouvelle ligne avec Entrée"
       enable: "Activer la discussion"
       flag: "Signalement"
       emoji: "Insérer un émoji"
@@ -232,19 +237,18 @@ fr:
           other: 'Ce message dépasse la <a href="%{siteSettingUrl}" target="_blank">limite de notification</a> de %{count} mentions.'
       aria_roles:
         header: "En-tête de discussion"
-        composer: "Compositeur de discussion"
+        composer: "Éditeur de discussion"
         channels_list: "Liste des canaux de discussion"
       no_direct_message_channels: "Vous n'avez encore rejoint aucun message direct !"
       no_direct_message_channels_cta: "Commencer une conversation"
-      no_public_channels: "Vous n'avez encore rejoint aucune chaîne !"
+      no_public_channels: "Vous n'avez encore rejoint aucun canal !"
       no_public_channels_cta: "Parcourir les canaux"
       kicked_from_channel: "Vous ne pouvez plus accéder à ce canal."
+      chat_notifications_title: "Notifications de discussion"
       only_chat_push_notifications:
         title: "Envoyer uniquement des notifications push de discussion"
-        description: "Bloquer l'envoi de toutes les notifications push non liées à la discussion"
       ignore_channel_wide_mention:
         title: "Ignorer les mentions à l'échelle du canal"
-        description: "Ne pas envoyer de notifications pour les mentions à l'échelle du canal (@here et @all)"
       show_thread_title_prompts:
         title: "Afficher les invites relatives au titre du fil de discussion"
         description: "Afficher les invites pour définir un titre pour les nouveaux fils de discussion"
@@ -302,7 +306,7 @@ fr:
         one: "%{count} fichier"
         other: "%{count} fichiers"
       you_flagged: "Vous avez signalé ce message"
-      exit: "retour"
+      exit: "quitter la conversation"
       channel_status:
         read_only_header: "Le canal est en lecture seule"
         read_only: "Lecture seule"
@@ -326,6 +330,8 @@ fr:
       chat_message_separator:
         today: Aujourd'hui
         yesterday: Hier
+      search_view:
+        filter_placeholder: Rechercher dans les messages directs
       members_view:
         filter_placeholder: Trouver des membres
         add_member: Ajouter un membre
@@ -342,6 +348,8 @@ fr:
         tabs:
           members: Membres
           settings: Paramètres
+          search: Recherche
+        remove_member: "Supprimer"
       new_message_modal:
         title: Envoyer un message
         add_user_long: <kbd>majuscule + clic</kbd> ou <kbd>majuscule + entrée</kbd><span>Ajouter @%{username}</span>
@@ -432,6 +440,7 @@ fr:
           topic: "Sujet"
       reviewable:
         type: "Message de discussion"
+        message_in_channel: "Canal"
       reactions:
         only_you: "<span>Vous avez réagi avec </span>:%{emoji}:"
         you_and_single_user: "<span>Vous et %{username} avez réagi avec </span>:%{emoji}:"
@@ -494,6 +503,12 @@ fr:
           create_export: "Créer une exportation"
           confirm_export: "Cela exporte tous les messages de tous les canaux et vous envoie le résultat dans un message privé. Voulez-vous vraiment exporter ?"
           export_has_started: "L'exportation a commencé. Vous recevrez un MP quand elle sera prête."
+      search:
+        short_title: Recherche
+        no_results: "Aucun résultat trouvé"
+        sort:
+          relevance: "Pertinence"
+          latest: "Récents"
       my_threads:
         title: Mes fils de discussion
         aria_label: "Passer à ma liste de fils de discussion"
@@ -530,6 +545,7 @@ fr:
         select_emoji: "Choisir un émoji"
         system: "système"
         title: "Webhooks entrants"
+        header_description: "Les webhooks entrants peuvent être utilisés par des systèmes externes pour publier des messages dans un canal de discussion désigné en tant qu'utilisateur robot"
         url: "URL"
         url_instructions: "Cette adresse URL contient une valeur secrète - conservez-la précieusement."
         username: "Nom d'utilisateur"
@@ -570,13 +586,9 @@ fr:
           other: "%{commaSeparatedUsernames} et %{count} autres utilisateurs sont en train d'écrire"
       retention_reminders:
         indefinitely_short: "indéfiniment"
-        indefinitely_long: "Les paramètres de discussion ont été définis pour conserver les messages du canal indéfiniment."
         short:
           one: "%{count} jour"
           other: "%{count} jours"
-        long:
-          one: "Les paramètres de discussion ont été définis pour conserver les messages du canal pendant %{count} jour."
-          other: "Les paramètres de discussion ont été définis pour conserver les messages du canal pendant %{count} jours."
       flags:
         off_topic: "Ce message n'est pas pertinent pour la discussion en cours telle que définie par le titre du canal et devrait probablement être déplacé ailleurs."
         inappropriate: "Ce message contient du contenu qu'une personne raisonnable considérerait comme offensant, abusif ou contraire à nos <a href=\"%{basePath}/guidelines\">consignes communautaires</a>."
@@ -642,6 +654,11 @@ fr:
       draft_channel_screen:
         header: "Nouveau message"
         cancel: "Annuler"
+      quick_reaction_type:
+        title: "Réactions de discussion en un clic"
+        options:
+          frequent: "Réactions de discussion les plus fréquemment utilisées"
+          custom: "Réactions personnalisées"
     notifications:
       chat_invitation: "vous a invité(e) à rejoindre un canal de discussion"
       chat_invitation_html: "<span>%{username}</span> <span>vous a invité(e) à rejoindre un canal de discussion</span>"
@@ -699,11 +716,10 @@ fr:
           switch_channel_arrows: "%{shortcut} Changer de canal"
           switch__unread_channel_arrows: "%{shortcut} Changer de canal non lu"
           open_quick_channel_selector: "%{shortcut} Ouvrir le sélecteur de canal rapide"
-          open_insert_link_modal: "%{shortcut} Insérer un lien hypertexte (compositeur uniquement)"
-          composer_bold: "%{shortcut} Gras (compositeur uniquement)"
-          composer_italic: "%{shortcut} Italique (compositeur uniquement)"
-          composer_code: "%{shortcut} Code (compositeur uniquement)"
-          drawer_open: "%{shortcut} Ouvrir le tiroir de discussion"
+          open_insert_link_modal: "%{shortcut} Insérer un lien (éditeur uniquement)"
+          composer_bold: "%{shortcut} Gras (éditeur uniquement)"
+          composer_italic: "%{shortcut} Italique (éditeur uniquement)"
+          composer_code: "%{shortcut} Code (éditeur uniquement)"
           drawer_close: "%{shortcut} Fermer le tiroir de discussion"
           mark_all_channels_read: "%{shortcut} Marquer tous les canaux comme lus"
     topic_statuses:
@@ -729,6 +745,8 @@ fr:
         chat:
           title: Discussion
     sidebar:
+      start_new_dm:
+        title: Créer une conversation personnelle
       panels:
         chat:
           label: "Discussion"

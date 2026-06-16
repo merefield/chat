@@ -10,11 +10,17 @@ RSpec.describe Chat::CreateThread do
   describe ".call" do
     subject(:result) { described_class.call(params:, **dependencies) }
 
-    fab!(:current_user) { Fabricate(:user) }
-    fab!(:another_user) { Fabricate(:user) }
+    fab!(:current_user, :user)
+    fab!(:another_user, :user)
     fab!(:channel_1) { Fabricate(:chat_channel, threading_enabled: true) }
     fab!(:message_1) { Fabricate(:chat_message, chat_channel: channel_1) }
-    fab!(:dm_channel) { Fabricate(:direct_message_channel, users: [current_user, another_user]) }
+    fab!(:dm_channel) do
+      Fabricate(
+        :direct_message_channel,
+        users: [current_user, another_user],
+        threading_enabled: true,
+      )
+    end
     fab!(:dm_message) { Fabricate(:chat_message, chat_channel: dm_channel) }
 
     let(:guardian) { Guardian.new(current_user) }
@@ -98,6 +104,32 @@ RSpec.describe Chat::CreateThread do
       before { params[:channel_id] = private_channel_1.id }
 
       it { is_expected.to fail_a_policy(:can_view_channel) }
+    end
+
+    context "when channel is not open" do
+      context "when channel is read_only" do
+        before { channel_1.update!(status: :read_only) }
+
+        it { is_expected.to fail_a_policy(:can_create_thread_in_channel) }
+      end
+
+      context "when channel is closed" do
+        before { channel_1.update!(status: :closed) }
+
+        it { is_expected.to fail_a_policy(:can_create_thread_in_channel) }
+
+        context "when user is staff" do
+          let(:guardian) { Guardian.new(Fabricate(:admin)) }
+
+          it { is_expected.to run_successfully }
+        end
+      end
+
+      context "when channel is archived" do
+        before { channel_1.update!(status: :archived) }
+
+        it { is_expected.to fail_a_policy(:can_create_thread_in_channel) }
+      end
     end
 
     context "when threading is not enabled for the channel" do

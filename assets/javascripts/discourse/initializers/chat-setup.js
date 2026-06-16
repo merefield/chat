@@ -2,13 +2,14 @@ import { setOwner } from "@ember/owner";
 import { service } from "@ember/service";
 import EmojiPickerDetached from "discourse/components/emoji-picker/detached";
 import { bind } from "discourse/lib/decorators";
+import EmbedMode from "discourse/lib/embed-mode";
 import { number } from "discourse/lib/formatter";
-import { getOwnerWithFallback } from "discourse/lib/get-owner";
 import { replaceIcon } from "discourse/lib/icon-library";
 import { withPluginApi } from "discourse/lib/plugin-api";
 import { i18n } from "discourse-i18n";
 import { clearChatComposerButtons } from "discourse/plugins/chat/discourse/lib/chat-composer-buttons";
 import ChannelHashtagType from "discourse/plugins/chat/discourse/lib/hashtag-types/channel";
+import richEditorExtension from "../../lib/rich-editor-extension";
 import ChatHeaderIcon from "../components/chat/header/icon";
 import chatStyleguide from "../components/styleguide/organisms/chat";
 
@@ -21,16 +22,14 @@ class ChatSetupInit {
   @service router;
   @service("chat") chatService;
   @service chatHistory;
-  @service site;
   @service siteSettings;
-  @service currentUser;
   @service appEvents;
 
   constructor(owner) {
     setOwner(this, owner);
     this.appEvents.on("discourse:focus-changed", this, "_handleFocusChanged");
 
-    withPluginApi("0.12.1", (api) => {
+    withPluginApi((api) => {
       api.addAboutPageActivity("chat_messages", (periods) => {
         const count = periods["7_days"];
         if (count) {
@@ -64,9 +63,9 @@ class ChatSetupInit {
           label: "chat.emoji",
           id: "emoji",
           class: "chat-emoji-btn",
-          icon: "smile",
+          icon: "face-smile",
           position: "dropdown",
-          displayed: owner.lookup("service:site").mobileView,
+          displayed: () => owner.lookup("service:site").mobileView,
           action(context) {
             const didSelectEmoji = (emoji) => {
               const composer = owner.lookup(`service:chat-${context}-composer`);
@@ -96,6 +95,7 @@ class ChatSetupInit {
         label: "chat.upload",
         position: "dropdown",
         action: "uploadClicked",
+        synchronous: true,
         dependentKeys: ["canAttachUploads"],
         displayed() {
           return this.canAttachUploads;
@@ -118,9 +118,7 @@ class ChatSetupInit {
       // we want to decorate the chat quote dates regardless
       // of whether the current user has chat enabled
       api.decorateCookedElement((elem) => {
-        const currentUser = getOwnerWithFallback(this).lookup(
-          "service:current-user"
-        );
+        const currentUser = owner.lookup("service:current-user");
         const currentUserTimezone = currentUser?.user_option?.timezone;
         const chatTranscriptElements =
           elem.querySelectorAll(".chat-transcript");
@@ -145,7 +143,7 @@ class ChatSetupInit {
         });
       });
 
-      if (!this.chatService.userCanChat) {
+      if (!this.chatService.userCanChat || EmbedMode.enabled) {
         return;
       }
 
@@ -166,7 +164,10 @@ class ChatSetupInit {
       api.addCardClickListenerSelector(".chat-drawer-outlet");
 
       if (this.chatService.userCanChat) {
-        api.headerIcons.add("chat", ChatHeaderIcon);
+        api.headerIcons.add("chat", ChatHeaderIcon, {
+          after: "search",
+          before: "hamburger",
+        });
       }
 
       api.addStyleguideSection?.({
@@ -174,6 +175,8 @@ class ChatSetupInit {
         category: "organisms",
         id: "chat",
       });
+
+      api.registerRichEditorExtension(richEditorExtension);
     });
   }
 

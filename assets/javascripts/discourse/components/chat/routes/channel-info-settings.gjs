@@ -6,12 +6,13 @@ import { LinkTo } from "@ember/routing";
 import { service } from "@ember/service";
 import DButton from "discourse/components/d-button";
 import DToggleSwitch from "discourse/components/d-toggle-switch";
+import DTooltip from "discourse/float-kit/components/d-tooltip";
 import categoryBadge from "discourse/helpers/category-badge";
 import icon from "discourse/helpers/d-icon";
 import replaceEmoji from "discourse/helpers/replace-emoji";
 import { popupAjaxError } from "discourse/lib/ajax-error";
+import ComboBox from "discourse/select-kit/components/combo-box";
 import { i18n } from "discourse-i18n";
-import ComboBox from "select-kit/components/combo-box";
 import ChatForm from "discourse/plugins/chat/discourse/components/chat/form";
 import ChatModalArchiveChannel from "discourse/plugins/chat/discourse/components/chat/modal/archive-channel";
 import ChatModalDeleteChannel from "discourse/plugins/chat/discourse/components/chat/modal/delete-channel";
@@ -21,28 +22,22 @@ import ChatModalToggleChannelStatus from "discourse/plugins/chat/discourse/compo
 import ChatRetentionReminderText from "discourse/plugins/chat/discourse/components/chat-retention-reminder-text";
 import ToggleChannelMembershipButton from "discourse/plugins/chat/discourse/components/toggle-channel-membership-button";
 
-// FORK EDIT
+const NOTIFICATION_LEVELS = [
+  { name: i18n("chat.notification_levels.never"), value: "never" },
+  { name: i18n("chat.notification_levels.mention"), value: "mention" },
+  { name: i18n("chat.notification_levels.always"), value: "always" },
+];
 
 export default class ChatRouteChannelInfoSettings extends Component {
   @service chatApi;
   @service chatGuardian;
   @service chatChannelsManager;
-  @service currentUser;
   @service siteSettings;
   @service dialog;
   @service modal;
   @service site;
   @service toasts;
   @service router;
-
-  // FORK EDITS
-  notificationLevels = [
-    { name: i18n("chat.notification_levels.never"), value: "never" },
-    { name: i18n("chat.notification_levels.mention", { username: this.currentUser.username }), value: "mention" },
-    { name: i18n("chat.notification_levels.explicit_mention", { username: this.currentUser.username }), value: "explicit_mention" },
-    { name: i18n("chat.notification_levels.always"), value: "always" },
-  ];
-  // END FORK EDITS
 
   settingsSectionTitle = i18n("chat.settings.settings_title");
   channelInfoSectionTitle = i18n("chat.settings.info_title");
@@ -63,6 +58,12 @@ export default class ChatRouteChannelInfoSettings extends Component {
   channelWideMentionsLabel = i18n("chat.settings.channel_wide_mentions_label");
   autoJoinLabel = i18n("chat.settings.auto_join_users_label");
   notificationsLevelLabel = i18n("chat.settings.notification_level");
+
+  // FORK EDIT: retain overridable notificationLevels getter for FEATURE: user channel option to suppress @all notifications
+  get notificationLevels() {
+    return NOTIFICATION_LEVELS;
+  }
+  // END FORK EDIT
 
   get canEditChannel() {
     if (
@@ -90,8 +91,43 @@ export default class ChatRouteChannelInfoSettings extends Component {
     return this.args.channel.isCategoryChannel;
   }
 
+  get shouldRenderPostingModeSection() {
+    return false;
+  }
+
+  get shouldRenderSilentMemberAddsSection() {
+    return false;
+  }
+
+  get postingModeLabel() {
+    return "";
+  }
+
+  get silentMemberAddsLabel() {
+    return "";
+  }
+
+  get postingModeOptions() {
+    return [];
+  }
+
+  get postingModeValue() {
+    return null;
+  }
+
   get shouldRenderArchiveRow() {
     return this.chatGuardian.canArchiveChannel(this.args.channel);
+  }
+
+  get canToggleChannelState() {
+    return this.args.channel.isClosed;
+  }
+
+  get openChannelDisabledReason() {
+    if (this.args.channel.isArchived) {
+      return i18n("chat.channel_settings.open_channel_disabled_archived");
+    }
+    return i18n("chat.channel_settings.open_channel_disabled_read_only");
   }
 
   get toggleChannelWideMentionsAvailable() {
@@ -116,12 +152,18 @@ export default class ChatRouteChannelInfoSettings extends Component {
     return this.args.channel.currentUserMembership.muted;
   }
 
+  get shouldRenderMuteSection() {
+    return this.args.channel.currentUserMembership.following;
+  }
+
   get shouldRenderChannelWideMentionsAvailable() {
     return this.args.channel.isCategoryChannel;
   }
 
   get shouldRenderNotificationsLevelSection() {
-    return !this.isChannelMuted;
+    return (
+      this.args.channel.currentUserMembership.following && !this.isChannelMuted
+    );
   }
 
   get autoJoinAvailable() {
@@ -129,6 +171,15 @@ export default class ChatRouteChannelInfoSettings extends Component {
       this.siteSettings.max_chat_auto_joined_users > 0 &&
       this.args.channel.isCategoryChannel &&
       this.args.channel.isOpen
+    );
+  }
+
+  get shouldRenderSettingsSection() {
+    return (
+      this.args.channel.isOpen &&
+      (this.shouldRenderMuteSection ||
+        this.shouldRenderNotificationsLevelSection ||
+        this.toggleThreadingDirectMessage)
     );
   }
 
@@ -266,6 +317,12 @@ export default class ChatRouteChannelInfoSettings extends Component {
   }
 
   @action
+  onChangePostingMode() {}
+
+  @action
+  onToggleSilentMemberAdds() {}
+
+  @action
   async onToggleThreadingEnabled(value) {
     try {
       this.args.channel.threadingEnabled = !value;
@@ -395,17 +452,19 @@ export default class ChatRouteChannelInfoSettings extends Component {
             </form.section>
           {{/if}}
 
-          {{#if @channel.isOpen}}
+          {{#if this.shouldRenderSettingsSection}}
             <form.section @title={{this.settingsSectionTitle}} as |section|>
-              <section.row @label={{this.muteSectionLabel}}>
-                <:action>
-                  <DToggleSwitch
-                    @state={{@channel.currentUserMembership.muted}}
-                    class="c-channel-settings__mute-switch"
-                    {{on "click" this.onToggleMuted}}
-                  />
-                </:action>
-              </section.row>
+              {{#if this.shouldRenderMuteSection}}
+                <section.row @label={{this.muteSectionLabel}}>
+                  <:action>
+                    <DToggleSwitch
+                      @state={{@channel.currentUserMembership.muted}}
+                      class="c-channel-settings__mute-switch"
+                      {{on "click" this.onToggleMuted}}
+                    />
+                  </:action>
+                </section.row>
+              {{/if}}
 
               {{#if this.shouldRenderNotificationsLevelSection}}
                 <section.row @label={{this.notificationsLevelLabel}}>
@@ -530,6 +589,39 @@ export default class ChatRouteChannelInfoSettings extends Component {
                 </section.row>
               {{/if}}
 
+              {{#if this.shouldRenderPostingModeSection}}
+                <section.row @label={{this.postingModeLabel}}>
+                  <:action>
+                    <ComboBox
+                      @content={{this.postingModeOptions}}
+                      @value={{this.postingModeValue}}
+                      @valueProperty="value"
+                      @onChange={{this.onChangePostingMode}}
+                      class="c-channel-settings__selector c-channel-settings__posting-mode-selector"
+                    />
+                  </:action>
+                </section.row>
+              {{/if}}
+
+              {{! FORK EDIT expose silent member-adds setting seam }}
+              {{#if this.shouldRenderSilentMemberAddsSection}}
+                <section.row @label={{this.silentMemberAddsLabel}}>
+                  <:action>
+                    <DToggleSwitch
+                      @state={{@channel.xChatSilentMemberAdds}}
+                      class="c-channel-settings__silent-member-adds-switch"
+                      {{on
+                        "click"
+                        (fn
+                          this.onToggleSilentMemberAdds
+                          @channel.xChatSilentMemberAdds
+                        )
+                      }}
+                    />
+                  </:action>
+                </section.row>
+              {{/if}}
+
               {{#if this.shouldRenderStatusSection}}
                 {{#if this.shouldRenderArchiveRow}}
                   <section.row>
@@ -553,13 +645,30 @@ export default class ChatRouteChannelInfoSettings extends Component {
                         @icon="lock"
                         class="close-btn chat-form__btn btn-transparent"
                       />
-                    {{else}}
+                    {{else if this.canToggleChannelState}}
                       <DButton
                         @action={{this.onToggleChannelState}}
                         @label="chat.channel_settings.open_channel"
                         @icon="unlock"
                         class="open-btn chat-form__btn btn-transparent"
                       />
+                    {{else}}
+                      <DTooltip
+                        @identifier="channel-open-disabled"
+                        @placement="left"
+                      >
+                        <:trigger>
+                          <DButton
+                            @label="chat.channel_settings.open_channel"
+                            @icon="unlock"
+                            @disabled={{true}}
+                            class="open-btn chat-form__btn btn-transparent"
+                          />
+                        </:trigger>
+                        <:content>
+                          {{this.openChannelDisabledReason}}
+                        </:content>
+                      </DTooltip>
                     {{/if}}
                   </:action>
                 </section.row>
@@ -596,6 +705,7 @@ export default class ChatRouteChannelInfoSettings extends Component {
                     leaveClass="btn-danger"
                     joinIcon="right-to-bracket"
                     leaveIcon="right-from-bracket"
+                    leaveDestructive=true
                   }}
                 />
               </:action>

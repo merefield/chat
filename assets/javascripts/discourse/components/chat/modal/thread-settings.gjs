@@ -3,7 +3,7 @@ import { tracked } from "@glimmer/tracking";
 import { Input } from "@ember/component";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
-import { htmlSafe } from "@ember/template";
+import { trustHTML } from "@ember/template";
 import DButton from "discourse/components/d-button";
 import DModal from "discourse/components/d-modal";
 import icon from "discourse/helpers/d-icon";
@@ -59,7 +59,7 @@ export default class ChatModalThreadSettings extends Component {
           @disabled={{this.buttonDisabled}}
           @action={{this.saveThread}}
           @label="chat.save"
-          class="btn-transparent btn-primary"
+          class="btn-transparent --primary"
         />
       </:headerPrimaryAction>
       <:body>
@@ -79,7 +79,7 @@ export default class ChatModalThreadSettings extends Component {
           <div class="discourse-ai-cta">
             <p class="discourse-ai-cta__title">{{icon "circle-info"}}
               {{i18n "chat.thread_title_modal.discourse_ai.title"}}</p>
-            <p class="discourse-ai-cta__description">{{htmlSafe
+            <p class="discourse-ai-cta__description">{{trustHTML
                 (i18n
                   "chat.thread_title_modal.discourse_ai.description"
                   url="<a href='https://www.discourse.org/ai' rel='noopener noreferrer' target='_blank'>Discourse AI</a>"

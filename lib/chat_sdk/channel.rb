@@ -28,9 +28,10 @@ module ChatSDK
         },
       ) do
         on_success { |messages:| messages }
-        on_failure { raise "Unexpected error" }
+        on_failed_contract { |contract| raise contract.errors.full_messages.join(", ") }
         on_failed_policy(:can_view_channel) { raise "Guardian can't view channel" }
         on_failed_policy(:target_message_exists) { raise "Target message doesn't exist" }
+        on_failure { raise "Unexpected error" }
       end
     end
 
@@ -53,13 +54,7 @@ module ChatSDK
     end
 
     def start_reply(channel_id:, thread_id: nil, guardian:)
-      Chat::StartReply.call(
-        guardian: guardian,
-        params: {
-          channel_id: channel_id,
-          thread_id: thread_id,
-        },
-      ) do
+      Chat::StartReply.call(guardian:, params: { channel_id:, thread_id: }) do
         on_success { |client_id:| client_id }
         on_model_not_found(:presence_channel) { raise "Chat::Channel or Chat::Thread not found." }
       end
@@ -84,14 +79,7 @@ module ChatSDK
     end
 
     def stop_reply(channel_id:, thread_id: nil, client_id:, guardian:)
-      Chat::StopReply.call(
-        guardian: guardian,
-        params: {
-          client_id: client_id,
-          channel_id: channel_id,
-          thread_id: thread_id,
-        },
-      ) do
+      Chat::StopReply.call(guardian:, params: { client_id:, channel_id:, thread_id: }) do
         on_model_not_found(:presence_channel) { raise "Chat::Channel or Chat::Thread not found." }
       end
     end

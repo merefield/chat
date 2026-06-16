@@ -10,6 +10,7 @@ module Chat
                :chatable_type,
                :chatable_url,
                :description,
+               :emoji,
                :title,
                :unicode_title,
                :slug,
@@ -23,7 +24,7 @@ module Chat
                :current_user_membership,
                :meta,
                :threading_enabled,
-               :icon_upload_url
+               :pinned_messages_count
 
     has_one :last_message, serializer: Chat::LastMessageSerializer, embed: :objects
 
@@ -34,8 +35,8 @@ module Chat
       @current_user_membership = opts[:membership]
     end
 
-    def icon_upload_url
-      object.icon_upload&.url
+    def include_emoji?
+      object.emoji.present?
     end
 
     def include_description?
@@ -44,6 +45,14 @@ module Chat
 
     def memberships_count
       object.user_count
+    end
+
+    def pinned_messages_count
+      object.pinned_messages.size
+    end
+
+    def include_pinned_messages_count?
+      SiteSetting.chat_pinned_messages
     end
 
     def chatable_url
@@ -139,6 +148,8 @@ module Chat
       data[:can_moderate] = scope.can_moderate_chat?(object.chatable)
       data[:can_delete_self] = scope.can_delete_own_chats?(object.chatable)
       data[:can_delete_others] = scope.can_delete_other_chats?(object.chatable)
+      data[:can_remove_members] = scope.can_remove_members?(object)
+      data[:can_manage_pins] = scope.can_manage_chat_channel_pins?(object)
 
       data
     end

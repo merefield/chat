@@ -44,6 +44,12 @@ fa_IR:
           one: "%{formatted_number} پیام چت"
           other: "%{formatted_number} پیام چت"
     chat:
+      edit_category:
+        tab_title: "گفتگو"
+        channel: "کانال"
+        description: "توضیح"
+        actions: "عملیات"
+        settings: "تنظیم"
       text_copied: متن در کلیپ بورد کپی شد
       link_copied: پیوند در کلیپ بورد کپی شد
       back_to_forum: "انجمن"
@@ -58,6 +64,7 @@ fa_IR:
       cancel: "انصراف"
       cancel_reply: "لغو پاسخ"
       chat_channels: "کانال‌ها"
+      pinned: "سنجاق شده"
       browse_all_channels: "مرور همه کانال‌ها"
       see_in: "ببینید در"
       move_to_channel:
@@ -81,6 +88,7 @@ fa_IR:
         join_channel: "پیوستن به کانال"
         leave_channel: "ترک کانال"
         leave_groupchat_info: "با ترک این چت گروهی، دیگر به آن دسترسی نخواهید داشت و اعلان های مربوط به آن را دریافت نخواهید کرد. برای پیوستن مجدد، باید دوباره توسط یکی از اعضای چت گروهی دعوت شوید."
+        notification_settings_context: "اعلان‌ها"
         join: "عضو شدن"
         leave: "ترک کردن"
         save_label:
@@ -127,7 +135,6 @@ fa_IR:
       email_frequency:
         description: "فقط در صورتی که در ۱۵ دقیقه گذشته شما را ندیده باشیم به شما ایمیل ارسال می کنیم."
         never: "هرگز"
-        title: "آگاه‌سازی‌های ایمیل"
         when_away: "فقط وقتی نیستم"
       header_indicator_preference:
         title: "نمایش نشانگر فعالیت در سربرگ"
@@ -138,9 +145,6 @@ fa_IR:
       send_shortcut:
         enter:
           label: "ارسال با Enter"
-          description: "خط جدید با Shift + Enter"
-        meta_enter:
-          description: "خط جدید توسط Enter"
       enable: "فعال کردن گفتگو"
       flag: "پرچم"
       emoji: "درج ایموجی"
@@ -195,7 +199,6 @@ fa_IR:
         one: "%{count} پرونده"
         other: "%{count} پرونده"
       you_flagged: "شما این پیام را پرچم گذاری کردید"
-      exit: "بازگشت"
       channel_status:
         read_only: "فقط خواندنی"
         archived: "بایگانی شد"
@@ -214,6 +217,8 @@ fa_IR:
       chat_message_separator:
         today: امروز
         yesterday: دیروز
+      search_view:
+        filter_placeholder: جستجوی پیام‌ها
       members_view:
         filter_placeholder: جستجوی اعضا
       about_view:
@@ -228,6 +233,8 @@ fa_IR:
         tabs:
           members: اعضاء
           settings: تنظیمات
+          search: جستجو
+        remove_member: "پاک کردن"
       new_message_modal:
         filter: "فیلتر"
       channel_edit_name_slug_modal:
@@ -263,6 +270,7 @@ fa_IR:
           topic: "موضوعات"
       reviewable:
         type: "پیام گفتگو"
+        message_in_channel: "کانال"
       composer:
         italic_text: "متن تاکید شده"
         bold_text: "نوشته‌ی ضخیم "
@@ -295,6 +303,12 @@ fa_IR:
         members_label: "اعضاء"
       admin:
         title: "گفتگو"
+      search:
+        short_title: جستجو
+        no_results: "چیزی یافت نشد"
+        sort:
+          relevance: "ارتباطات"
+          latest: "آخرین"
       direct_messages:
         new: "ایجاد گفتگوی شخصی"
         create: "برو"
@@ -395,7 +409,6 @@ fa_IR:
         title: "گفتگو"
         keyboard_shortcuts:
           switch_channel_arrows: "%{shortcut} تغییر کانال"
-          drawer_open: "%{shortcut} باز کردن کِشوی گفتگو"
           drawer_close: "%{shortcut} بستن کِشوی گفتگو"
     topic_statuses:
       chat:
@@ -418,6 +431,8 @@ fa_IR:
         chat:
           title: گفتگو
     sidebar:
+      start_new_dm:
+        title: ایجاد گفتگوی شخصی
       panels:
         chat:
           label: "گفتگو"

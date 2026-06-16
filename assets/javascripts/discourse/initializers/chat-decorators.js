@@ -1,10 +1,9 @@
-import $ from "jquery";
-import { spinnerHTML } from "discourse/helpers/loading-spinner";
 import { decorateGithubOneboxBody } from "discourse/instance-initializers/onebox-decorators";
+import CodeblockButtons from "discourse/lib/codeblock-buttons";
 import { samePrefix } from "discourse/lib/get-url";
 import { decorateHashtags } from "discourse/lib/hashtag-decorator";
 import highlightSyntax from "discourse/lib/highlight-syntax";
-import loadScript from "discourse/lib/load-script";
+import lightbox from "discourse/lib/lightbox";
 import { withPluginApi } from "discourse/lib/plugin-api";
 import DiscourseURL from "discourse/lib/url";
 import { i18n } from "discourse-i18n";
@@ -66,16 +65,34 @@ export default {
     api.decorateChatMessage(this.forceLinksToOpenNewTab, {
       id: "linksNewTab",
     });
-    api.decorateChatMessage(
-      (element) =>
-        this.lightbox(element.querySelectorAll("img:not(.emoji, .avatar)")),
-      {
-        id: "lightbox",
-      }
-    );
+    api.decorateChatMessage((element) => lightbox(element), {
+      id: "lightbox",
+    });
     api.decorateChatMessage((element) => decorateHashtags(element, site), {
       id: "hashtagIcons",
     });
+
+    api.decorateChatMessage(
+      (element) => {
+        if (!siteSettings.chat_show_copy_button_on_codeblocks) {
+          return;
+        }
+        if (!element.querySelector("pre > code")) {
+          return;
+        }
+        const cb = new CodeblockButtons({
+          site,
+          showFullscreen: true,
+          showCopy: true,
+        });
+        cb.attachToGeneric(element);
+
+        return cb.cleanup;
+      },
+      {
+        id: "codeblockButtons",
+      }
+    );
   },
 
   _getScrollParent(node, maxParentSelector) {
@@ -108,21 +125,15 @@ export default {
         return;
       }
 
-      if (this.currentUserTimezone) {
-        dateTimeLinkEl.innerText = moment
-          .tz(dateTimeRaw, this.currentUserTimezone)
-          .format(i18n("dates.long_no_year"));
-      } else {
-        dateTimeLinkEl.innerText = moment(dateTimeRaw).format(
-          i18n("dates.long_no_year")
-        );
-      }
+      dateTimeLinkEl.innerText = moment(dateTimeRaw).format(
+        i18n("dates.long_no_year")
+      );
     });
   },
 
   forceLinksToOpenNewTab(element) {
     const links = element.querySelectorAll(
-      ".chat-message-text a:not([target='_blank'])"
+      "a:not([target]), a[target]:not([target='_blank'])"
     );
     for (let linkIndex = 0; linkIndex < links.length; linkIndex++) {
       const link = links[linkIndex];
@@ -132,34 +143,9 @@ export default {
     }
   },
 
-  lightbox(images) {
-    loadScript("/javascripts/jquery.magnific-popup.min.js").then(function () {
-      $(images).magnificPopup({
-        type: "image",
-        closeOnContentClick: false,
-        mainClass: "mfp-zoom-in",
-        tClose: i18n("lightbox.close"),
-        tLoading: spinnerHTML,
-        image: {
-          verticalFit: true,
-        },
-        gallery: {
-          enabled: true,
-        },
-        callbacks: {
-          elementParse: (item) => {
-            item.src = item.el[0].dataset.largeSrc || item.el[0].src;
-          },
-        },
-      });
-    });
-  },
-
   initialize(container) {
     if (container.lookup("service:chat").userCanChat) {
-      withPluginApi("0.8.42", (api) =>
-        this.initializeWithPluginApi(api, container)
-      );
+      withPluginApi((api) => this.initializeWithPluginApi(api, container));
     }
   },
 };

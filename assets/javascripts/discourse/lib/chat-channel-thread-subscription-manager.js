@@ -20,7 +20,7 @@ export default class ChatChannelThreadSubscriptionManager {
     this.messageBus.subscribe(
       this.messageBusChannel,
       this.onMessage,
-      this.thread.channelMessageBusLastId
+      this.thread.threadMessageBusLastId
     );
   }
 
@@ -37,7 +37,7 @@ export default class ChatChannelThreadSubscriptionManager {
   }
 
   @bind
-  onMessage(busData, _, __, lastMessageBusId) {
+  onMessage(busData, _, lastMessageBusId) {
     switch (busData.type) {
       case "sent":
         this.handleSentMessage(busData);
@@ -105,9 +105,14 @@ export default class ChatChannelThreadSubscriptionManager {
     stagedMessage.error = null;
     stagedMessage.id = data.chat_message.id;
     stagedMessage.staged = false;
+    stagedMessage.message = data.chat_message.message;
     stagedMessage.excerpt = data.chat_message.excerpt;
     stagedMessage.channel = channel;
     stagedMessage.createdAt = new Date(data.chat_message.created_at);
+    stagedMessage.cooked = data.chat_message.cooked;
+    stagedMessage.uploads = cloneJSON(data.chat_message.uploads || []);
+    stagedMessage.streaming = data.chat_message.streaming;
+    stagedMessage.edited = data.chat_message.edited;
 
     return stagedMessage;
   }
@@ -163,7 +168,11 @@ export default class ChatChannelThreadSubscriptionManager {
       return;
     }
 
-    if (this.currentUser.staff || this.currentUser.id === targetMsg.user.id) {
+    if (
+      this.currentUser.staff ||
+      this.thread.channel.canModerate ||
+      this.currentUser.id === targetMsg.user.id
+    ) {
       targetMsg.deletedAt = data.deleted_at;
       targetMsg.deletedById = data.deleted_by_id;
       targetMsg.expanded = false;

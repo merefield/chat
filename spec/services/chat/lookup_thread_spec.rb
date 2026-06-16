@@ -9,11 +9,11 @@ RSpec.describe Chat::LookupThread do
   describe ".call" do
     subject(:result) { described_class.call(params:, **dependencies) }
 
-    fab!(:current_user) { Fabricate(:user) }
+    fab!(:current_user, :user)
     fab!(:channel) { Fabricate(:chat_channel, threading_enabled: true) }
     fab!(:private_channel) { Fabricate(:private_category_channel, group: Fabricate(:group)) }
     fab!(:thread) { Fabricate(:chat_thread, channel: channel) }
-    fab!(:other_thread) { Fabricate(:chat_thread) }
+    fab!(:other_thread, :chat_thread)
 
     let(:guardian) { Guardian.new(current_user) }
     let(:params) { { thread_id: thread.id, channel_id: thread.channel_id } }
@@ -49,6 +49,18 @@ RSpec.describe Chat::LookupThread do
       before { thread.update!(channel: private_channel) }
 
       it { is_expected.to fail_a_policy(:invalid_access) }
+    end
+
+    context "when the original message is deleted" do
+      before { thread.original_message.trash! }
+
+      it { is_expected.to fail_a_policy(:original_message_not_deleted) }
+
+      context "when user is a moderator" do
+        before { current_user.update!(moderator: true) }
+
+        it { is_expected.to run_successfully }
+      end
     end
 
     context "when threading is not enabled for the channel" do
